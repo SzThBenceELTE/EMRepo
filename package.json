@@ -1,0 +1,10 @@
+{
+    "name": "fullstack-app",
+    "version": "1.0.0",
+    "scripts": {
+        "start": "concurrently \"npm start --prefix server\" \"npm start --prefix event-manager-angular\""
+    },
+    "devDependencies": {
+        "concurrently": "^9.1.0"
+    }
+}
