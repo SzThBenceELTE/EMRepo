@@ -8,6 +8,7 @@ const path = require('path');
 
 const userRoutes = require('./routes/UserRoutes'); // API routes for users
 const personRoutes = require('./routes/PersonRoutes'); // API routes for people
+const eventRoutes = require('./routes/EventRoutes'); // API routes for events
 
 const db = require('./db');
 
@@ -38,6 +39,7 @@ app.use(express.static(path.join(__dirname, '../event-manager-angular/views')));
 
 // API Routes
 app.use('/api', userRoutes);
+app.use('/api', personRoutes);
 app.use('/api', eventRoutes);
 
 
