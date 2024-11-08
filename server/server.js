@@ -19,24 +19,38 @@ const { init: initAuth } = require('./auth');
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());  // Middleware to parse JSON bodies
-app.use(cors({
-  origin: 'http://localhost:4200', // Adjust based on where your Angular app runs
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
 
-initAuth(); // Initialize authentication
-app.use(session({
-  secret: 'secret',
-  saveUninitialized: true,
-  resave: true
-}));
-app.use(passport.initialize());
-app.use(passport.session());
+// Modify the CORS options
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or servers)
+    if (!origin) return callback(null, true);
 
-// Middleware to serve static Angular files
-console.log(path.join(__dirname, '../event-manager-angular/views'));
-app.use(express.static(path.join(__dirname, '../event-manager-angular/views')));
+    // Allow any request from localhost, regardless of port
+    if (origin.startsWith('http://localhost')) {
+      return callback(null, true);
+    }
+
+    // Disallow other origins
+    return callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  // credentials: true, // Add this if you need to support cookies or HTTP authentication
+};
+
+app.use(cors(corsOptions));
+
+
+// initAuth(); // Initialize authentication
+// app.use(session({
+//   secret: 'secret',
+//   saveUninitialized: true,
+//   resave: true
+// }));
+// app.use(passport.initialize());
+// app.use(passport.session());
+
 
 // API Routes
 app.use('/api', userRoutes);
@@ -44,10 +58,15 @@ app.use('/api', personRoutes);
 app.use('/api', eventRoutes);
 app.use('/api', homeRoutes);
 
+// Middleware to serve static Angular files
+const angularPagePath = path.join(__dirname, '../event-manager-angular/dist/event-manager-angular');
+app.use(express.static(angularPagePath));
+
+
 
 // Fallback route to serve the Angular app for any other route
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../event-manager-angular/src/index.html'));
+  res.sendFile(path.join(angularPagePath, 'index.html'));
 });
 
 

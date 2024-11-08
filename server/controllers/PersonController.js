@@ -11,9 +11,12 @@ exports.getPersons = async (req, res) => {
 };
 
 exports.createPerson = async (req, res) => {
-    const { firstName, surnameName, role, group } = req.body;
+    const { firstName, surname, role, group } = req.body;
+    console.log(req.body);
     try {
-        const newPerson = await Person.createPerson(firstName, surnameName, role, group);
+        console.log("Controller");
+        console.log(firstName, surname, role, group);
+        const newPerson = await Person.createPerson(firstName, surname, role, group);
         res.status(201).json(newPerson);
     } catch (error) {
         console.error(error);
@@ -38,9 +41,12 @@ exports.getPersonById = async (req, res) => {
 
 exports.updatePerson = async (req, res) => {
     const { id } = req.params;
-    const { firstName, surnameName, role, group } = req.body;
+    
+    const { firstName, surname, role, group } = req.body;
+    console.log("Controller");
+    console.log(firstName, surname, role, group);
     try {
-        const updatedPerson = await Person.updatePerson(id, firstName, surnameName, role, group);
+        const updatedPerson = await Person.updatePerson(id, firstName, surname, role, group);
         if (updatedPerson) {
             res.status(200).json(updatedPerson);
         } else {

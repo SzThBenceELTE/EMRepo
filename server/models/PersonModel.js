@@ -16,7 +16,7 @@ const Person = sequelize.define(
       firstName: {
         type: DataTypes.STRING,
       },
-      surnameName: {
+      surname: {
         type: DataTypes.STRING,
       },
       role: {
@@ -47,19 +47,23 @@ Person.getAll = async () => {
 return await Person.findAll();
 };
 
-Person.createPerson = async (firstName, surnameName, role, group) => {
-    return await Person.create({ firstName, surnameName, role, group });
+Person.createPerson = async (firstName, surname, role, group) => {
+    console.log("Model");
+    console.log(firstName, surname, role, group);
+    return await Person.create({ firstName, surname, role, group });
 };
 
 Person.findById = async (id) => {
     return await Person.findByPk(id);
 }
 
-Person.updatePerson = async (id, firstName, surnameName, role, group) => {
+Person.updatePerson = async (id, firstName, surname, role, group) => {
     const person = await Person.findByPk(id);
+    console.log("Model");
+    console.log(firstName, surname, role, group);
     if (person) {
         person.firstName = firstName;
-        person.surnameName = surnameName;
+        person.surname = surname;
         person.role = role;
         person.group = group;
         return await person.save();
