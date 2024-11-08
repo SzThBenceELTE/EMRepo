@@ -38,6 +38,17 @@ User.findById = async (id) => {
     return await User.findByPk(id);
 };
 
+User.findByEmail = async (email) => {
+    console.log('finbyemail - email:', email);
+    return await User.findOne({ where: { email } });
+}
+
+User.findByName = async (name) => {
+    console.log('finbyname - name:', name);
+    return await User.findOne({ where: { name } });
+}
+
+
 User.updateUser = async (id, name, email) => {
     const user = await User.findByPk(id);
     if (user) {
