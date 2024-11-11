@@ -1,8 +1,7 @@
 const { Sequelize, DataTypes } = require('sequelize');
-const sequelize = require('../db');
+const sequelize = require('../sequelize'); // Import from sequelize.js
 const RoleEnum = require('../enums/RoleEnum');
 const GroupEnum = require('../enums/GroupEnum');
-
 
 
 const Person = sequelize.define(
@@ -42,6 +41,8 @@ const Person = sequelize.define(
       }
     }
   );
+
+
 
 Person.getAll = async () => {
 return await Person.findAll();

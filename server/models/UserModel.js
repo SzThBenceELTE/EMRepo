@@ -1,5 +1,5 @@
 const { Sequelize, DataTypes } = require('sequelize');
-const sequelize = require('../db');
+const sequelize = require('../sequelize'); // Import from sequelize.js
 
 // Define the User model
 const User = sequelize.define(
@@ -24,6 +24,8 @@ const User = sequelize.define(
         allowNull: false, // Add validation if needed
     },
 });
+
+
 
 // CRUD operations
 User.getAll = async () => {

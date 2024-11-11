@@ -1,5 +1,5 @@
 const { Sequelize, DataTypes } = require('sequelize');
-const sequelize = require('../db');
+const sequelize = require('../sequelize'); // Import from sequelize.js
 const EventEnum = require('../enums/EventEnum');
 
 const Event = sequelize.define(
@@ -26,7 +26,6 @@ const Event = sequelize.define(
     maxParticipants: {
       type: DataTypes.INTEGER,
     },
-
   },
   {
     validate: {
@@ -38,6 +37,8 @@ const Event = sequelize.define(
     }
   }
 );
+
+
 
 Event.getAll = async () => {
   return await Event.findAll();
