@@ -7,6 +7,7 @@ const Person = require('./models/PersonModel');
 const User = require('./models/UserModel');
 const Event = require('./models/EventModel');
 
+
 // Define associations after models are imported
 Person.belongsTo(User); // Each Person belongs to a User
 User.hasOne(Person);    // Each User has one Person

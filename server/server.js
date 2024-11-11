@@ -72,7 +72,7 @@ app.get('*', (req, res) => {
 
 
 const port = process.env.PORT || 3000;
-db.sequelize.sync({ force: false }).then(() => {
+db.sequelize.sync({ alter: true }).then(() => {
   app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
   });

@@ -1,7 +1,8 @@
 // Example UserController.js
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const User = require('../models/UserModel'); // Adjust the path as needed
+const User = require('../models/UserModel'); 
+const Person = require('../models/PersonModel');
 require('dotenv').config();
 
 const jwtSecret = process.env.JWT_SECRET;
@@ -16,14 +17,54 @@ exports.getUsers = async (req, res) => {
     }
 };
 
+// exports.createUser = async (req, res) => {
+//     const { name, email, password } = req.body;
+//     try {
+//         const newUser = await User.createUser(name, email, password);
+//         res.status(201).json(newUser);
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Error creating user' });
+//     }
+// };
+
 exports.createUser = async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password, firstName, surname, role, group } = req.body;
+  
     try {
-        const newUser = await User.createUser(name, email, password);
-        res.status(201).json(newUser);
+      // Check if user already exists
+      let existingUser = await User.findByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email already exists' });
+      }
+  
+      // Hash the password
+    //   const hashedPassword = await bcrypt.hash(password, 10);
+  
+      // Create the user
+      
+      const newUser = await User.create({
+        name,
+        email,
+        password,
+      });
+      console.log('newUser:', newUser);
+  
+      // Create the person and link to the user
+      
+      const newPerson = await Person.create({
+        firstName,
+        surname,
+        role,
+        group,
+        userId: newUser.id,
+      });
+      console.log('newUser:', newPerson);
+
+      res.status(201).json({ user: newUser, person: newPerson });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error creating user' });
+      console.error(error);
+      res.status(500).json({ message: 'Error creating user' });
     }
 };
 
