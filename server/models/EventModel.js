@@ -71,3 +71,5 @@ Event.deleteEvent = async (id) => {
   }
   return null; // Event not found
 };
+
+module.exports = Event;

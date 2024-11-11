@@ -23,6 +23,50 @@ class HomeScreen extends StatelessWidget {
       body: Center(
         child: Text('Welcome to Event Manager'),
       ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              child: Text('Event Manager'),
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+            ),
+            ListTile(
+              title: Text('Profile'),
+              onTap: () {
+                // Navigate to Profile Screen
+              },
+            ),
+            ListTile(
+              title: Text('Settings'),
+              onTap: () {
+                // Navigate to Settings Screen
+              },
+            ),
+            ListTile(
+              title: Text('Events'),
+              onTap: () {
+                Navigator.pushNamed(context, '/events');
+              },
+            ),
+            ListTile(
+              title: Text('People'),
+              onTap: () {
+                Navigator.pushNamed(context, '/people');
+              },
+            ),
+            ListTile(
+              title: Text('Log out'),
+              onTap: () {
+                authProvider.logout();
+                Navigator.pushReplacementNamed(context, '/');
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

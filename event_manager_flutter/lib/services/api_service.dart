@@ -39,5 +39,37 @@ class ApiService {
     }
   }
 
+  Future<List<dynamic>> fetchEvents(String token) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/events'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load events');
+    }
+  }
+
+  Future<List<dynamic>> fetchPeople(String token) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/people'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load people');
+    }
+  }
+
   // Add other API methods as needed
 }

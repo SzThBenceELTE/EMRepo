@@ -13,6 +13,7 @@ exports.getEvents = async (req, res) => {
 exports.createEvent = async (req, res) => {
     const { name, type, startDate, endDate, maxParticipants } = req.body;
     try {
+        console.log(Event);
         const newEvent = await Event.createEvent(name, type, startDate, endDate, maxParticipants);
         res.status(201).json(newEvent);
     } catch (error) {
