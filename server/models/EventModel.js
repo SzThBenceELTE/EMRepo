@@ -36,9 +36,6 @@ const Event = sequelize.define(
       }
     }
   },
-  {
-    tableName: 'events',
-  }
 );
 
 

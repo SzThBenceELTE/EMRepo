@@ -11,6 +11,7 @@ const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_here';
 exports.getUsers = async (req, res) => {
     try {
         const users = await User.getAll();
+        console.log(users);
         res.status(200).json(users);
     } catch (error) {
         console.error(error);

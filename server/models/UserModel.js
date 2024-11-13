@@ -24,9 +24,7 @@ const User = sequelize.define(
         allowNull: false, // Add validation if needed
     }, 
 },
-{
-    tableName: 'users',
-});
+);
 
 
 

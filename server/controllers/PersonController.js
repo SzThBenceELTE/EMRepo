@@ -3,6 +3,7 @@ const Person = require('../models/PersonModel');
 exports.getPersons = async (req, res) => {
     try {
         const persons = await Person.getAll();
+        console.log(persons);
         res.status(200).json(persons);
     } catch (error) {
         console.error(error);

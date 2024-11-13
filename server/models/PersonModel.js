@@ -28,13 +28,12 @@ const Person = sequelize.define(
         allowNull: true,
       },
       // userId: {
-      //   type: DataTypes.INTEGER,
-      //   allowNull: false, // Ensures userId cannot be NULL
+      //   type: Sequelize.INTEGER,
+      //   allowNull: true,  // Make this field nullable
       //   references: {
-      //     model: 'Users',
+      //     model: 'users',
       //     key: 'id',
       //   },
-      //   onDelete: 'CASCADE',
       // },
     },
     {
@@ -49,9 +48,6 @@ const Person = sequelize.define(
         }
       }
     },
-    {
-      tableName: 'people',
-    }
   );
 
 // Person.belongsTo(User, { foreignKey: 'userId', allowNull: false });

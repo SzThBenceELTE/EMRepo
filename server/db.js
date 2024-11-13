@@ -11,9 +11,9 @@ const EventParticipants = require('./models/EventParticipants');
 
 // Define associations after models are imported
 Person.belongsTo(User, {
-  onDelete: 'CASCADE', // Deletes the person if the user is deleted
-  onUpdate: 'CASCADE', // Updates the userId if the associated User's id is updated
-});
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+}); // Each Person belongs to a User
 User.hasOne(Person);    // Each User has one Person
 
 
@@ -23,7 +23,7 @@ Person.belongsToMany(Event, { through: 'EventParticipants', foreignKey: 'personI
 
 
 // // Sync all models (i.e., create tables if they don't exist)
-sequelize.sync({ force: true, logging: console.log })
+sequelize.sync({})
   .then(async () => {
     console.log('Database synced and tables created.');
 
