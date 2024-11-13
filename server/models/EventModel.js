@@ -40,6 +40,7 @@ const Event = sequelize.define(
 
 
 
+
 Event.getAll = async () => {
   return await Event.findAll();
 };

@@ -24,11 +24,27 @@ void main() {
 class EventManagerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Initialize AuthProvider by loading persisted user data
+    Provider.of<AuthProvider>(context, listen: false).loadUserFromPrefs();
+
     return MaterialApp(
       title: 'Event Manager',
-      initialRoute: '/',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          if (auth.currentPerson != null) {
+            return EventsScreen();
+          } else {
+            return LoginScreen();
+          }
+        },
+      ),
+
+      //initialRoute: '/',
       routes: {
-        '/': (context) => LoginScreen(),
+        '/login': (context) => LoginScreen(),
         '/home': (context) => HomeScreen(),
         '/events': (context) => EventsScreen(),
         '/people': (context) => PeopleScreen(),

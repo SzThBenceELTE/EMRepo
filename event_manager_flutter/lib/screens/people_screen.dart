@@ -44,9 +44,24 @@ class _PeopleScreenState extends State<PeopleScreen> {
                 final surname = event['surname'] ?? '';
                 final role = event['role'] ?? 'Unknown Role';
                 final group = event['group'] ?? 'No Group';
-                return ListTile(
-                  title: Text(firstName + ' ' + surname),
-                  subtitle: Text(role + ' - ' + group),
+                 return Card(
+                  margin: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  elevation: 3,
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$firstName $surname',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 6),
+                        Text('Role: $role'),
+                        Text('Group: $group'),
+                      ],
+                    ),
+                  ),
                 );
               },
             ),

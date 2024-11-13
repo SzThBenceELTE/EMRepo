@@ -28,22 +28,10 @@ class HomeScreen extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              child: Text('Event Manager'),
+              child: Text('Event Manager - Menu'),
               decoration: BoxDecoration(
                 color: Colors.blue,
               ),
-            ),
-            ListTile(
-              title: Text('Profile'),
-              onTap: () {
-                // Navigate to Profile Screen
-              },
-            ),
-            ListTile(
-              title: Text('Settings'),
-              onTap: () {
-                // Navigate to Settings Screen
-              },
             ),
             ListTile(
               title: Text('Events'),

@@ -79,5 +79,8 @@ Person.deletePerson = async (id) => {
     }
     return null; // Person not found
 };
+Person.findBySurname = async (surname) => {
+    return await Person.findOne({ where: { surname } });
+};
 
 module.exports = Person;

@@ -1,11 +1,12 @@
 // Example UserController.js
+const { authenticateToken } = require('./auth/AuthenticationChecker');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/UserModel'); 
 const Person = require('../models/PersonModel');
 require('dotenv').config();
 
-const jwtSecret = process.env.JWT_SECRET;
+const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_here';
 
 exports.getUsers = async (req, res) => {
     try {
@@ -39,14 +40,14 @@ exports.createUser = async (req, res) => {
       }
   
       // Hash the password
-    //   const hashedPassword = await bcrypt.hash(password, 10);
+       const hashedPassword = await bcrypt.hash(password, 10);
   
       // Create the user
       
       const newUser = await User.create({
         name,
         email,
-        password,
+        password: hashedPassword,
       });
       console.log('newUser:', newUser);
   
@@ -59,6 +60,7 @@ exports.createUser = async (req, res) => {
         group,
         userId: newUser.id,
       });
+      await newUser.setPerson(newPerson); // Associate the person with the user
       console.log('newUser:', newPerson);
 
       res.status(201).json({ user: newUser, person: newPerson });
@@ -154,16 +156,60 @@ exports.loginUser = async (req, res) => {
         return res.status(401).json({ message: 'Authentication failed. User not found.' });
       }
       
-      const isMatch = (password === user.password);
+      // Compare the provided password with the hashed password in the database
+      const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         return res.status(401).json({ message: 'Authentication failed. Wrong password.' });
       }
       
-      const token = jwt.sign({ id: user._id, username: user.username }, jwtSecret, { expiresIn: '1h' });
-      
+      const token = jwt.sign(
+        { id: user.id, username: user.username },
+        jwtSecret,
+        { expiresIn: '1h' }
+      );
       res.status(200).json({ loginToken: token });
     } catch (error) {
-        console.error('Login Error:', error.message);
+      console.error('Login Error:', error.message);
       res.status(500).json({ message: 'Internal server error.' });
+    }
+  };
+
+  exports.getCurrentUser = async (req, res) => {
+    try {
+        const userId = req.user.id; 
+        console.log('userId:', userId);
+    
+        // Await the asynchronous call to fetch the user
+        const user = await User.findByPk(userId, {
+          include: [{ model: Person }],  // Ensures Person is fetched along with User
+        });
+        console.log('user:', user);
+        if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+        }
+    
+        // Access the associated Person using Sequelize associations
+        const person = user.Person; // Using the generated accessor method
+        console.log('person:', person);
+        if (!person) {
+          return res.status(404).json({ message: 'Person not found' });
+        }
+        
+      res.status(200).json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        personId: person.id,
+        person: {
+            id: person.id,
+            firstName: person.firstName,
+            surname: person.surname,
+            role: person.role,
+            group: person.group,
+          },
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Internal server error, get current user.' });
     }
   };

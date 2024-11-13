@@ -1,11 +1,13 @@
 // db.js
 
 const sequelize = require('./sequelize'); // Import the sequelize instance
+const bcrypt = require('bcryptjs');
 
 // Import models
 const Person = require('./models/PersonModel');
 const User = require('./models/UserModel');
 const Event = require('./models/EventModel');
+const EventParticipants = require('./models/EventParticipants'); // If you have an explicit model
 
 
 // Define associations after models are imported
@@ -15,15 +17,9 @@ User.hasOne(Person);    // Each User has one Person
 Event.belongsToMany(Person, { through: 'EventParticipants', foreignKey: 'eventId' });
 Person.belongsToMany(Event, { through: 'EventParticipants', foreignKey: 'personId' });
 
+
+
 // // Sync all models (i.e., create tables if they don't exist)
-// sequelize
-//   .sync({ alter: true })
-//   .then(() => {
-//     console.log('Database synced and tables created (if not existing).');
-//   })
-//   .catch((err) => {
-//     console.error('Error syncing database:', err);
-//   });
 sequelize.sync({ alter: true })
   .then(async () => {
     console.log('Database synced and tables created.');
@@ -36,13 +32,13 @@ sequelize.sync({ alter: true })
 
     if (!adminUser) {
       // Hash the password
-      //const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
       // Create admin user
       adminUser = await User.create({
         name: 'Admin',
         email: adminEmail,
-        password: adminPassword,
+        password: hashedPassword,
       });
       console.log('Admin user created.');
     } else {
@@ -75,4 +71,5 @@ module.exports = {
   Person,
   User,
   Event,
+  EventParticipants,
 };

@@ -67,3 +67,60 @@ exports.deleteEvent = async (req, res) => {
         res.status(500).json({ message: 'Error deleting event' });
     }
 };
+
+exports.joinEvent = async (req, res) => {
+    const { eventId, personId } = req.body;
+  
+    try {
+      const event = await Event.findByPk(eventId);
+      if (!event) {
+        return res.status(404).json({ message: 'Event not found.' });
+      }
+  
+      // Count current participants
+      const participantCount = await event.countPeople();
+  
+      if (participantCount >= event.maxParticipants) {
+        return res.status(400).json({ message: 'Event is full.' });
+      }
+  
+      // Check if the person is already participating
+      const isParticipant = await event.hasPerson(personId);
+      if (isParticipant) {
+        return res.status(400).json({ message: 'Person already joined.' });
+      }
+  
+      // Add person to the event
+      await event.addPerson(personId);
+  
+      res.status(200).json({ message: 'Successfully joined the event.' });
+    } catch (error) {
+      console.error('Join Event Error:', error);
+      res.status(500).json({ message: 'Internal server error.' });
+    }
+  };
+
+  exports.leaveEvent = async (req, res) => {
+    const { eventId, personId } = req.body;
+  
+    try {
+      const event = await Event.findByPk(eventId);
+      if (!event) {
+        return res.status(404).json({ message: 'Event not found.' });
+      }
+  
+      // Check if the person is a participant
+      const isParticipant = await event.hasPerson(personId);
+      if (!isParticipant) {
+        return res.status(400).json({ message: 'Person is not a participant.' });
+      }
+  
+      // Remove person from the event
+      await event.removePerson(personId);
+  
+      res.status(200).json({ message: 'Successfully left the event.' });
+    } catch (error) {
+      console.error('Leave Event Error:', error);
+      res.status(500).json({ message: 'Internal server error.' });
+    }
+  };

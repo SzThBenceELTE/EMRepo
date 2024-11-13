@@ -1,3 +1,5 @@
+require('dotenv').config(); // Load environment variables at the very top
+
 const express = require('express');
 const passport = require('passport');
 const session = require('express-session');

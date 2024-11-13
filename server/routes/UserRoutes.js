@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/UserController');
+const { authenticateToken } = require('../controllers/auth/AuthenticationChecker');
 
 router.post('/users/login', userController.loginUser);
+router.get('/users/me', authenticateToken, userController.getCurrentUser);
 
 
 // Define routes for users

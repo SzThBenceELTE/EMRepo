@@ -9,16 +9,32 @@ class ApiService {
     final response = await http.post(
       Uri.parse('$_baseUrl/users/login'),
       headers: {'Content-Type': 'application/json'},
-      
       body: jsonEncode({'username': username, 'password': password}),
     );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-       log('Login successful, token: ${data['loginToken']}');
+      log('Login successful, token: ${data['loginToken']}');
       return data['loginToken']; // Return the JWT token
     } else {
       throw Exception('Failed to log in');
+    }
+  }
+
+  Future<Map<String, dynamic>> getCurrentUser(String token) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/users/me'),
+      
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to fetch user data');
     }
   }
 
@@ -68,6 +84,62 @@ class ApiService {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to load people');
+    }
+  }
+
+  Future<void> joinEvent(int eventId, int personId, String token) async {
+    final url = Uri.parse('$_baseUrl/events/join');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token', // If you're using JWT
+      },
+      body: jsonEncode({
+        'eventId': eventId,
+        'personId': personId,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to join event');
+    }
+  }
+
+  Future<void> leaveEvent(int eventId, int personId, String token) async {
+    final url = Uri.parse('$_baseUrl/events/leave');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'eventId': eventId,
+        'personId': personId,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to leave event');
+    }
+  }
+
+  // Optional: Fetch subscription status
+  Future<bool> isSubscribed(int eventId, int personId, String token) async {
+    final url = Uri.parse('$_baseUrl/events/$eventId/isSubscribed/$personId');
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['subscribed'] as bool;
+    } else {
+      throw Exception('Failed to fetch subscription status');
     }
   }
 
