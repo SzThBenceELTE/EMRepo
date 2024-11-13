@@ -2,6 +2,7 @@ const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../sequelize'); // Import from sequelize.js
 const RoleEnum = require('../enums/RoleEnum');
 const GroupEnum = require('../enums/GroupEnum');
+// const User = require('./UserModel');
 
 
 const Person = sequelize.define(
@@ -26,7 +27,15 @@ const Person = sequelize.define(
         type: DataTypes.ENUM(GroupEnum),
         allowNull: true,
       },
-      
+      // userId: {
+      //   type: DataTypes.INTEGER,
+      //   allowNull: false, // Ensures userId cannot be NULL
+      //   references: {
+      //     model: 'Users',
+      //     key: 'id',
+      //   },
+      //   onDelete: 'CASCADE',
+      // },
     },
     {
       validate: {
@@ -39,10 +48,14 @@ const Person = sequelize.define(
           }
         }
       }
+    },
+    {
+      tableName: 'people',
     }
   );
 
-
+// Person.belongsTo(User, { foreignKey: 'userId', allowNull: false });
+// User.hasOne(Person, { foreignKey: 'userId' });
 
 Person.getAll = async () => {
 return await Person.findAll();

@@ -7,12 +7,15 @@ const bcrypt = require('bcryptjs');
 const Person = require('./models/PersonModel');
 const User = require('./models/UserModel');
 const Event = require('./models/EventModel');
-const EventParticipants = require('./models/EventParticipants'); // If you have an explicit model
-
+const EventParticipants = require('./models/EventParticipants'); 
 
 // Define associations after models are imported
-Person.belongsTo(User); // Each Person belongs to a User
+Person.belongsTo(User, {
+  onDelete: 'CASCADE', // Deletes the person if the user is deleted
+  onUpdate: 'CASCADE', // Updates the userId if the associated User's id is updated
+});
 User.hasOne(Person);    // Each User has one Person
+
 
 Event.belongsToMany(Person, { through: 'EventParticipants', foreignKey: 'eventId' });
 Person.belongsToMany(Event, { through: 'EventParticipants', foreignKey: 'personId' });
@@ -20,7 +23,7 @@ Person.belongsToMany(Event, { through: 'EventParticipants', foreignKey: 'personI
 
 
 // // Sync all models (i.e., create tables if they don't exist)
-sequelize.sync({ alter: true })
+sequelize.sync({ force: true, logging: console.log })
   .then(async () => {
     console.log('Database synced and tables created.');
 
@@ -29,36 +32,30 @@ sequelize.sync({ alter: true })
     const adminPassword = 'adminpassword'; // Use a secure password
 
     let adminUser = await User.findOne({ where: { email: adminEmail } });
+    console.log('adminUser:', adminUser);
 
     if (!adminUser) {
       // Hash the password
       const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
-      // Create admin user
+      // Create the user
       adminUser = await User.create({
         name: 'Admin',
         email: adminEmail,
         password: hashedPassword,
       });
-      console.log('Admin user created.');
-    } else {
-      console.log('Admin user already exists.');
-    }
 
-    // Check if admin person exists
-    let adminPerson = await Person.findOne({ where: { userId: adminUser.id } });
-
-    if (!adminPerson) {
-      // Create admin person
-      adminPerson = await Person.create({
+      // Create the person and link to the user
+      const adminPerson = await Person.create({
         firstName: 'Admin',
         surname: 'User',
-        role: 'MANAGER', // Use a valid role from RoleEnum
+        role: 'MANAGER', // Ensure this role exists in RoleEnum
         userId: adminUser.id,
       });
-      console.log('Admin person created.');
-    } else {
-      console.log('Admin person already exists.');
+      adminPerson.setUser(adminUser); // Associate the person with the user
+      console.log('Admin user and person created.');
+      } else {
+      console.log('Admin user already exists.');
     }
   })
   .catch((err) => {
