@@ -214,3 +214,22 @@ exports.loginUser = async (req, res) => {
       res.status(500).json({ message: 'Internal server error, get current user.' });
     }
   };
+
+  exports.getSubscribedEvents = async (req, res) => {
+    const { personId } = req.params;
+  
+    try {
+      const person = await Person.findByPk(personId);
+      if (!person) {
+        return res.status(404).json({ message: 'Person not found.' });
+      }
+  
+      const events = await person.getEvents({ attributes: ['id'] });
+      const eventIds = events.map(event => event.id);
+  
+      res.status(200).json({ subscribedEventIds: eventIds });
+    } catch (error) {
+      console.error('Get Subscribed Events Error:', error);
+      res.status(500).json({ message: 'Internal server error.' });
+    }
+  };

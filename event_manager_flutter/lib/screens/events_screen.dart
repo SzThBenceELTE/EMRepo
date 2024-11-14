@@ -19,10 +19,8 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 
   Future<void> _loadEventsAndSubscriptions() async {
-    Future<void> _loadEventsAndSubscriptions() async {
     final eventProvider = Provider.of<EventProvider>(context, listen: false);
     await eventProvider.loadEvents(context);
-  }
   }
 
   @override
@@ -45,6 +43,7 @@ class _EventsScreenState extends State<EventsScreen> {
           IconButton(
             icon: Icon(Icons.logout),
             onPressed: () {
+              eventProvider.reset(); // Clear event data
               authProvider.logout();
               Navigator.pushReplacement(
                 context,
@@ -196,6 +195,32 @@ class _EventsScreenState extends State<EventsScreen> {
                 );
               },
             ),
+            drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              child: Text('Event Manager - Menu'),
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+            ),
+            ListTile(
+              title: Text('People'),
+              onTap: () {
+                Navigator.pushNamed(context, '/people');
+              },
+            ),
+            ListTile(
+              title: Text('Log out'),
+              onTap: () {
+                authProvider.logout();
+                Navigator.pushReplacementNamed(context, '/');
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 

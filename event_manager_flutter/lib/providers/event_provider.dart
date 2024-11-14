@@ -26,16 +26,14 @@ class EventProvider with ChangeNotifier {
 
   Future<void> loadSubscribedEvents(BuildContext context) async {
     try {
+      _subscribedEventIds.clear(); // Clear previous subscriptions
+
+
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final personId = authProvider.currentPerson!['personId'];
       final token = authProvider.token!;
 
-      for (var event in _events) {
-        bool isSub = await _apiService.isSubscribed(event['id'], personId, token);
-        if (isSub) {
-          _subscribedEventIds.add(event['id']);
-        }
-      }
+      _subscribedEventIds = await _apiService.getSubscribedEventIds(personId, token);
       notifyListeners();
     } catch (e) {
       throw Exception('Failed to load subscribed events');
@@ -68,5 +66,12 @@ class EventProvider with ChangeNotifier {
     } catch (e) {
       throw Exception('Failed to leave event: ${e.toString()}');
     }
+  }
+
+  // EventProvider.dart
+  void reset() {
+    _events.clear();
+    _subscribedEventIds.clear();
+    notifyListeners();
   }
 }

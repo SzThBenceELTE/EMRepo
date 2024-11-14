@@ -45,6 +45,12 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: _isLoading ? null : _login,
               child: _isLoading ? CircularProgressIndicator() : Text('Login'),
             ),
+            // Register Button
+            Spacer(),
+            TextButton(
+              onPressed: _isLoading ? null : _register,
+              child: Text('Register'),
+            ),
           ],
         ),
       ),
@@ -62,12 +68,16 @@ class _LoginScreenState extends State<LoginScreen> {
         _usernameController.text.trim(),
         _passwordController.text.trim(),
       );
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, '/events');
     } catch (e) {
       setState(() {
         _errorMessage = 'Invalid username or password';
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _register() async {
+    Navigator.pushNamed(context, '/register');
   }
 }

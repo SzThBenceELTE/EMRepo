@@ -48,6 +48,7 @@ class EventManagerApp extends StatelessWidget {
         '/home': (context) => HomeScreen(),
         '/events': (context) => EventsScreen(),
         '/people': (context) => PeopleScreen(),
+        // '/register' : (context) => RegisterScreen(),
         // Add other routes
       },
     );

@@ -8,6 +8,8 @@ router.get('/users/me', authenticateToken, userController.getCurrentUser);
 
 
 // Define routes for users
+router.get('/users/:personId/subscribedEvents', 
+    userController.getSubscribedEvents);
 router.get('/users', userController.getUsers);
 router.post('/users', userController.createUser);
 router.get('/users/:id', userController.getUserById);

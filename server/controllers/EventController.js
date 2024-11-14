@@ -124,3 +124,22 @@ exports.joinEvent = async (req, res) => {
       res.status(500).json({ message: 'Internal server error.' });
     }
   };
+
+  exports.isPersonSubscribedToEvent = async (req, res) => {
+    const { eventId, personId } = req.body;
+  
+    try {
+      const event = await Event.findByPk(eventId);
+      if (!event) {
+        return res.status(404).json({ message: 'Event not found.' });
+      }
+  
+      // Check if the person is a participant
+      const isParticipant = await event.hasPerson(personId);
+  
+      res.status(200).json({ subscribed: isParticipant });
+    } catch (error) {
+      console.error('Check Subscription Error:', error);
+      res.status(500).json({ message: 'Internal server error.' });
+    }
+  }

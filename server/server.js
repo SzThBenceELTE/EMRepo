@@ -7,6 +7,7 @@ const sqlite3 = require('better-sqlite3')
 
 const cors = require('cors');
 const path = require('path');
+const morgan = require('morgan'); // For logging
 
 const userRoutes = require('./routes/UserRoutes'); // API routes for users
 const personRoutes = require('./routes/PersonRoutes'); // API routes for people
@@ -21,6 +22,10 @@ const { init: initAuth } = require('./auth');
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());  // Middleware to parse JSON bodies
+
+// Logging Middleware
+app.use(morgan('combined')); // Logs detailed information about each request
+
 
 // Modify the CORS options
 const corsOptions = {
