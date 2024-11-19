@@ -64,6 +64,8 @@ class _EventsScreenState extends State<EventsScreen> {
                 final type = event['type'] ?? 'No Type';
                 final startDate = _formatDate(event['startDate']);
                 final endDate = _formatDate(event['endDate']);
+                final currentParticipants =
+                    event['currentParticipants']?.toString() ?? '0';
                 final maxParticipants =
                     event['maxParticipants']?.toString() ?? 'N/A';
                 final isSubscribed =
@@ -121,6 +123,19 @@ class _EventsScreenState extends State<EventsScreen> {
                             SizedBox(width: 5),
                             Text(
                               'End: $endDate',
+                              style: TextStyle(
+                                  fontSize: 14, color: Colors.grey[700]),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 5),
+                        Row(
+                          children: [
+                            Icon(Icons.people,
+                                size: 16, color: Colors.grey[700]),
+                            SizedBox(width: 5),
+                            Text(
+                              'Current Participants: $currentParticipants',
                               style: TextStyle(
                                   fontSize: 14, color: Colors.grey[700]),
                             ),

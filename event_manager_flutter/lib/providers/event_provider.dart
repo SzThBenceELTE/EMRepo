@@ -48,6 +48,14 @@ class EventProvider with ChangeNotifier {
 
       await _apiService.joinEvent(eventId, personId, token);
       _subscribedEventIds.add(eventId);
+
+      // Find the event and increment currentParticipants
+      final eventIndex = _events.indexWhere((event) => event['id'] == eventId);
+      if (eventIndex != -1) {
+        _events[eventIndex]['currentParticipants'] =
+          (_events[eventIndex]['currentParticipants'] ?? 0) + 1;
+      }
+
       notifyListeners();
     } catch (e) {
       throw Exception('Failed to join event: ${e.toString()}');
@@ -62,6 +70,14 @@ class EventProvider with ChangeNotifier {
 
       await _apiService.leaveEvent(eventId, personId, token);
       _subscribedEventIds.remove(eventId);
+
+      // Find the event and decrement currentParticipants
+      final eventIndex = _events.indexWhere((event) => event['id'] == eventId);
+      if (eventIndex != -1) {
+        _events[eventIndex]['currentParticipants'] =
+            (_events[eventIndex]['currentParticipants'] ?? 1) - 1;
+      }
+
       notifyListeners();
     } catch (e) {
       throw Exception('Failed to leave event: ${e.toString()}');

@@ -42,7 +42,21 @@ const Event = sequelize.define(
 
 
 Event.getAll = async () => {
-  return await Event.findAll();
+  return await Event.findAll({
+    attributes: {
+      include: [
+        [
+          // Use a subquery to count participants
+          Sequelize.literal(`(
+            SELECT COUNT(*)
+            FROM EventParticipants AS ep
+            WHERE ep.EventId = Event.id
+          )`),
+          'currentParticipants',
+        ],
+      ],
+    },
+  });;
 };
 
 Event.createEvent = async (name, type, startDate, endDate, maxParticipants) => {

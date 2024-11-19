@@ -113,8 +113,11 @@ class ApiService {
       }),
     );
 
-    if (response.statusCode != 200) {
-      throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to join event');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      throw Exception('Failed to fetch events');
     }
   }
 
