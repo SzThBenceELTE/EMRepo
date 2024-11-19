@@ -1,23 +1,46 @@
 const Event = require('../models/EventModel');
 
 exports.getEvents = async (req, res) => {
-    try {
-        const events = await Event.getAll();
-        res.status(200).json(events);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error retrieving events' });
-    }
+  try {
+    // const role = req.user.Person.role;
+    // const userGroup = req.user.Person.group;
+
+    console.log('req: ', req);
+
+    let events = await Event.getAll();
+
+    // if (role === 'DEVELOPER' && userGroup) {
+    //   // Filter events to include only those assigned to the developer's group
+    //   events = events.filter(event => {
+    //     const eventGroups = event.Groups.map(group => group.name);
+    //     const subeventGroups = event.subevents.flatMap(sub => sub.Groups.map(group => group.name));
+    //     const allGroups = [...eventGroups, ...subeventGroups];
+    //     return allGroups.includes(userGroup);
+    //   });
+    // }
+
+    res.status(200).json(events);
+  } catch (error) {
+    console.error('Get Events Error:', error);
+    res.status(500).json({ message: 'Error retrieving events' });
+  }
 };
 
 exports.createEvent = async (req, res) => {
-    const { name, type, startDate, endDate, maxParticipants } = req.body;
+    const { name, type, startDate, endDate, maxParticipants, parentId, groups } = req.body;
+    console.log(req.body);
     try {
         console.log(Event);
-        const newEvent = await Event.createEvent(name, type, startDate, endDate, maxParticipants);
+        const newEvent = await Event.createEvent(name, type, startDate, endDate, maxParticipants, parentId);
+
+        if (groups && groups.length > 0) {
+          const groupRecords = await Group.findAll({ where: { name: groups } });
+          await newEvent.addGroups(groupRecords);
+        }
+
         res.status(201).json(newEvent);
     } catch (error) {
-        console.error(error);
+        console.error('Create Event Error: ', error);
         res.status(500).json({ message: 'Error creating event' });
     }
 };

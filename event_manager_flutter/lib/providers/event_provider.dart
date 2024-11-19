@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:event_manager_flutter/models/event_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
@@ -55,6 +58,20 @@ class EventProvider with ChangeNotifier {
         _events[eventIndex]['currentParticipants'] =
           (_events[eventIndex]['currentParticipants'] ?? 0) + 1;
       }
+      else
+      {
+        for (var event in _events) {
+          if (event['subevents'] != null) {
+            final subEventIndex = event['subevents'].indexWhere((subEvent) => subEvent['id'] == eventId);
+            log(subEventIndex);
+            if (subEventIndex != -1) {
+              event['subevents'][subEventIndex]['currentParticipants'] =
+                (event['subevents'][subEventIndex]['currentParticipants'] ?? 0) + 1;
+              break;
+            }
+          }
+        }
+      }
 
       notifyListeners();
     } catch (e) {
@@ -77,10 +94,48 @@ class EventProvider with ChangeNotifier {
         _events[eventIndex]['currentParticipants'] =
             (_events[eventIndex]['currentParticipants'] ?? 1) - 1;
       }
+      else
+      {
+        for (var event in _events) {
+          if (event['subevents'] != null) {
+            final subEventIndex = event['subevents'].indexWhere((subEvent) => subEvent['id'] == eventId);
+            if (subEventIndex != -1) {
+              event['subevents'][subEventIndex]['currentParticipants'] =
+                  (event['subevents'][subEventIndex]['currentParticipants'] ?? 1) - 1;
+              break;
+            }
+          }
+        }
+      }
 
       notifyListeners();
     } catch (e) {
       throw Exception('Failed to leave event: ${e.toString()}');
+    }
+  }
+
+  // New method to leave main event and all its sub-events
+  Future<void> leaveMainEvent(BuildContext context, int mainEventId, List<dynamic> subEvents) async {
+    try {
+      
+
+      // Unsubscribe from all sub-events
+      for (var subEvent in subEvents) {
+        if (_subscribedEventIds.contains(subEvent['id'])) {
+          await leaveEvent(context, subEvent['id']);
+        }
+      }
+
+      // Unsubscribe from main event
+      await leaveEvent(context, mainEventId);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unsubscribed from main event and all sub-events'),
+        ),
+      );
+    } catch (e) {
+      throw Exception('Failed to unsubscribe from main event and sub-events: $e');
     }
   }
 

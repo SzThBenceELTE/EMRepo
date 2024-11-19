@@ -70,6 +70,7 @@ class _EventsScreenState extends State<EventsScreen> {
                     event['maxParticipants']?.toString() ?? 'N/A';
                 final isSubscribed =
                     eventProvider.subscribedEventIds.contains(event['id']);
+                final subEvents = event['subevents'] as List<dynamic>? ?? [];
 
                 return Card(
                   shape: RoundedRectangleBorder(
@@ -155,6 +156,194 @@ class _EventsScreenState extends State<EventsScreen> {
                           ],
                         ),
                         SizedBox(height: 10),
+                        // Display each subevent with its own ExpansionTile
+                        ...subEvents.map((subEvent) {
+                          final subName = subEvent['name'] ?? 'No Name';
+                          final subType = subEvent['type'] ?? 'No Type';
+                          final subStartDate =
+                              _formatDate(subEvent['startDate']);
+                          final subEndDate = _formatDate(subEvent['endDate']);
+                          final subCurrentParticipants =
+                              subEvent['currentParticipants']?.toString() ?? '0';
+                          final subMaxParticipants =
+                              subEvent['maxParticipants']?.toString() ?? 'N/A';
+                          final subIsSubscribed = eventProvider
+                              .subscribedEventIds
+                              .contains(subEvent['id']);
+
+                          return ExpansionTile(
+                            title: Text(
+                              subName,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 5, horizontal: 15),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Subevent Type
+                                    Row(
+                                      children: [
+                                        Icon(Icons.category,
+                                            size: 14, color: Colors.grey[700]),
+                                        SizedBox(width: 5),
+                                        Text(
+                                          subType,
+                                          style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[700]),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 5),
+                                    // Subevent Start Date
+                                    Row(
+                                      children: [
+                                        Icon(Icons.calendar_today,
+                                            size: 14, color: Colors.grey[700]),
+                                        SizedBox(width: 5),
+                                        Text(
+                                          'Start: $subStartDate',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[700]),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 5),
+                                    // Subevent End Date
+                                    Row(
+                                      children: [
+                                        Icon(Icons.calendar_today_outlined,
+                                            size: 14, color: Colors.grey[700]),
+                                        SizedBox(width: 5),
+                                        Text(
+                                          'End: $subEndDate',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[700]),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 5),
+                                    // Subevent Current Participants
+                                    Row(
+                                      children: [
+                                        Icon(Icons.people,
+                                            size: 14, color: Colors.grey[700]),
+                                        SizedBox(width: 5),
+                                        Text(
+                                          'Current Participants: $subCurrentParticipants',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[700]),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 5),
+                                    // Subevent Max Participants
+                                    Row(
+                                      children: [
+                                        Icon(Icons.people,
+                                            size: 14, color: Colors.grey[700]),
+                                        SizedBox(width: 5),
+                                        Text(
+                                          'Max Participants: $subMaxParticipants',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[700]),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 10),
+                                    // Subscribe/Unsubscribe Button for Subevent
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: subIsSubscribed
+                                              ? Colors.red
+                                              : Colors.blue,
+                                        ),
+                                        onPressed: isSubscribed
+                                            ? () {
+                                                if (person != null &&
+                                                    token != null) {
+                                                  if (subIsSubscribed) {
+                                                    // Unsubscribe from Subevent
+                                                    eventProvider
+                                                        .leaveEvent(
+                                                            context,
+                                                            subEvent['id'])
+                                                        .then((_) {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                              'Unsubscribed from $subName'),
+                                                        ),
+                                                      );
+                                                    }).catchError((error) {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                              'Failed to unsubscribe: $error'),
+                                                        ),
+                                                      );
+                                                    });
+                                                  } else {
+                                                    // Subscribe to Subevent
+                                                    eventProvider
+                                                        .joinEvent(
+                                                            context,
+                                                            subEvent['id'])
+                                                        .then((_) {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                              'Subscribed to $subName'),
+                                                        ),
+                                                      );
+                                                    }).catchError((error) {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                              'Failed to subscribe: $error'),
+                                                        ),
+                                                      );
+                                                    });
+                                                  }
+                                                }
+                                              }
+                                            : null,
+                                        child: Text(
+                                          subIsSubscribed
+                                              ? 'Unsubscribe'
+                                              : 'Subscribe',
+                                          style:
+                                              TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                        SizedBox(height: 10),
                         Align(
                           alignment: Alignment.centerRight,
                           child: ElevatedButton(
@@ -165,11 +354,11 @@ class _EventsScreenState extends State<EventsScreen> {
                               if (person != null && token != null) {
                                 if (isSubscribed) {
                                   // Unsubscribe
-                                  eventProvider.leaveEvent(
-                                      context, event['id']).then((_) {
+                                  eventProvider.leaveMainEvent(
+                                      context, event['id'], event['subevents']).then((_) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text('Unsubscribed from $name'),
+                                        content: Text('Unsubscribed from $name and all subevents'),
                                       ),
                                     );
                                   }).catchError((error) {
@@ -198,6 +387,7 @@ class _EventsScreenState extends State<EventsScreen> {
                                 }
                               }
                             },
+                            
                             child: Text(
                               isSubscribed ? 'Unsubscribe' : 'Subscribe',
                               style: TextStyle(color: Colors.white),

@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const eventController = require('../controllers/EventController');
+const { authenticateToken } = require('../controllers/auth/AuthenticationChecker');
+
 
 router.get('/events/:eventId/isSubscribed/:personId',
      eventController.isPersonSubscribedToEvent);

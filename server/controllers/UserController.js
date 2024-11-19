@@ -147,33 +147,42 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
+// Login User
 exports.loginUser = async (req, res) => {
-    const { username, password } = req.body;
-    
-    try {
-      const user = await User.findByName(username);
-      console.log('user:', user);
-      if (!user || !user.name) {
-        return res.status(401).json({ message: 'Authentication failed. User not found.' });
-      }
-      
-      // Compare the provided password with the hashed password in the database
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(401).json({ message: 'Authentication failed. Wrong password.' });
-      }
-      
-      const token = jwt.sign(
-        { id: user.id, username: user.username },
-        jwtSecret,
-        { expiresIn: '1h' }
-      );
-      res.status(200).json({ loginToken: token });
-    } catch (error) {
-      console.error('Login Error:', error.message);
-      res.status(500).json({ message: 'Internal server error.' });
+  const { username, password } = req.body;
+
+  try {
+    // Find user by email and include associated Person
+    const user = await User.findOne({
+      where: { name: username }, // Use 'username' for lookup
+      include: [{ model: Person }], // Include the associated Person
+    });
+
+    console.log('user:', user);
+
+    if (!user || !user.Person) {
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
-  };
+
+    // Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Authentication failed. Wrong password.' });
+    }
+
+    // Generate JWT including userId
+    const token = jwt.sign(
+      { userId: user.id },
+      jwtSecret,
+      { expiresIn: '1h' }
+    );
+
+    res.status(200).json({ loginToken: token });
+  } catch (error) {
+    console.error('Login Error:', error.message);
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+};
 
   exports.getCurrentUser = async (req, res) => {
     try {

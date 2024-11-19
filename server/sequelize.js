@@ -8,7 +8,7 @@ const { Op } = require('sequelize'); // Import Sequelize operators
 const sequelize = new Sequelize({
   dialect: 'sqlite',
   storage: path.join(__dirname, 'database.sqlite'), // Adjust the path as needed
-  logging: false, // Optional: Disable Sequelize logging
+  logging: false, // Enable detailed logging
 });
 
 module.exports = sequelize;

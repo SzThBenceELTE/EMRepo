@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/PersonController');
+const { authenticateToken } = require('../controllers/auth/AuthenticationChecker');
+
 
 router.get('/people', userController.getPersons);
 router.post('/people', userController.createPerson);

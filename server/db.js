@@ -8,7 +8,8 @@ const bcrypt = require('bcryptjs');
 const Person = require('./models/PersonModel');
 const User = require('./models/UserModel');
 const Event = require('./models/EventModel');
-const EventParticipants = require('./models/EventParticipants'); 
+const EventParticipants = require('./models/EventParticipants');
+const Group = require('./models/GroupModel'); 
 
 // Define associations after models are imported
 Person.belongsTo(User, {
@@ -23,6 +24,26 @@ User.hasOne(Person, {
 
 Event.belongsToMany(Person, { through: EventParticipants, foreignKey: 'eventId' });
 Person.belongsToMany(Event, { through: EventParticipants, foreignKey: 'personId' });
+
+//subevent association - one parent, one can have many children
+Event.hasMany(Event, { 
+  as: 'subevents', 
+  foreignKey: 'parentId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+
+Event.belongsTo(Event, { 
+  as: 'parent', 
+  foreignKey: 'parentId',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+
+// Many-to-Many relationship between Event and Group
+Event.belongsToMany(Group, { through: 'EventGroups', foreignKey: 'eventId' });
+Group.belongsToMany(Event, { through: 'EventGroups', foreignKey: 'groupId' });
+
 
 // Sync all models (i.e., create tables if they don't exist)
 sequelize.sync({})
