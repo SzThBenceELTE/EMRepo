@@ -64,9 +64,13 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     try {
+      print(_usernameController.text.trim());
+      print(_passwordController.text.trim());
+
       await authProvider.login(
         _usernameController.text.trim(),
         _passwordController.text.trim(),
+        context,
       );
       Navigator.pushReplacementNamed(context, '/events');
     } catch (e) {

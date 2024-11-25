@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/PersonController');
+const personController = require('../controllers/PersonController');
 const { authenticateToken } = require('../controllers/auth/AuthenticationChecker');
 
 
-router.get('/people', userController.getPersons);
-router.post('/people', userController.createPerson);
-router.get('/people/:id', userController.getPersonById);
-router.put('/people/:id', userController.updatePerson);
-router.delete('/people/:id', userController.deletePerson);
-
+router.get('/people', personController.getPersons);
+router.post('/people', personController.createPerson);
+router.get('/people/:id', personController.getPersonById);
+router.put('/people/:id', personController.updatePerson);
+router.delete('/people/:id', personController.deletePerson);
+router.get('/people/:personId/subscribed-events', personController.getSubscribedEvents);
 module.exports = router;

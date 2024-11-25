@@ -10,7 +10,7 @@ class PersonModel {
   final String surname;
   final RoleTypeEnum role;
   final GroupTypeEnum? group;
-  final String token;
+  final String? token;
   final int userId;
 
   PersonModel({
@@ -19,19 +19,22 @@ class PersonModel {
     required this.surname,
     required this.role,
     this.group,
-    required this.token,
+    this.token,
     required this.userId,
   });
 
   factory PersonModel.fromJson(Map<String, dynamic> json) {
+    print(json);
     return PersonModel(
       id: json['id'],
       firstName: json['firstName'],
       surname: json['surname'],
       role: _roleTypeEnumFromString(json['role']),
-      group: json['group'] != null ? _groupTypeEnumFromString(json['group']) : null,
-      token: json['token'],
-      userId: json['userId'],
+      group: json['group'] != null && json['group'].toString().isNotEmpty
+          ? _groupTypeEnumFromString(json['group'])
+          : null,
+      token: json['token'] ?? '',
+      userId: json['UserId'] as int, // Parsing userId
     );
   }
 

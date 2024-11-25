@@ -1,4 +1,6 @@
+const e = require('express');
 const Person = require('../models/PersonModel');
+const EventParticipants = require('../models/EventParticipants');
 
 exports.getPersons = async (req, res) => {
     try {
@@ -71,5 +73,25 @@ exports.deletePerson = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error deleting person' });
+    }
+};
+
+exports.getSubscribedEvents = async (req, res) => {
+    const { personId } = req.params;
+    console.log('Fetching subscribed events for personId:', personId);
+
+    try {
+        const subscriptions = await EventParticipants.findAll({
+            where: { personId: personId },
+            attributes: ['eventId'],
+        });
+
+        const eventIds = subscriptions.map(sub => sub.eventId);
+        console.log('Subscribed Event IDs:', eventIds);
+
+        res.status(200).json({ subscribedEventIds: eventIds });
+    } catch (error) {
+        console.error('Error fetching subscribed events:', error);
+        res.status(500).json({ message: 'Internal server error.' });
     }
 };

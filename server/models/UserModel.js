@@ -38,6 +38,7 @@ User.createUser = async (name, email, password) => {
 };
 
 User.findById = async (id) => {
+    console.log('finbyid - id:', id);
     return await User.findByPk(id);
 };
 

@@ -1,50 +1,57 @@
 // auth_provider.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../services/api_service.dart';
 import '../models/user_model.dart';
+import '../models/login_response.dart';
+import '../providers/person_provider.dart';
 
 class AuthProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
+
+  UserModel? _currentUser;
   String? _token;
-  Map<String, dynamic>? _currentPerson;
 
-  
+  UserModel? get currentUser => _currentUser;
   String? get token => _token;
-  Map<String, dynamic>? get currentPerson => _currentPerson;
-  
 
-  Future<void> login(String username, String password) async {
+  Future<void> loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString('token');
+    final userData = prefs.getString('userData');
+    if (userData != null) {
+      _currentUser = UserModel.fromJson(jsonDecode(userData));
+    }
+    notifyListeners();
+  }
+
+  Future<void> login(String username, String password, BuildContext context) async {
     try {
-      // Obtain the JWT token
-      _token = await _apiService.login(username, password);
-      
-      // Debugging: Print the received token
-      print('Token received: $_token');
-      
-      // Store the token securely
+      print('Logging in with $username and $password');
+      LoginResponse response = await _apiService.login(username, password);
+      print('Logged in: ${response.user}');
+      _currentUser = response.user;
+      _token = response.token;
+
+      // Store token and user data securely
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', _token!);
+      await prefs.setString('currentUser', jsonEncode(_currentUser!.toJson()));
 
-      // Fetch current user data using the token
-      _currentPerson = await _apiService.getCurrentUser(_token!);
-
-      // Debugging: Print the fetched user data
-      print('Current Person: $_currentPerson');
-
-      // Store user data securely
-      await prefs.setString('currentUser', jsonEncode(_currentPerson!));
+      final personProvider = Provider.of<PersonProvider>(context, listen: false);
+      await personProvider.loadCurrentPerson(context);
 
       notifyListeners();
     } catch (e) {
-      throw Exception('Login failed: ${e.toString()}');
+      throw e;
     }
   }
 
   Future<void> logout() async {
     _token = null;
-    _currentPerson = null;
+    _currentUser = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     await prefs.remove('currentUser');
@@ -56,7 +63,7 @@ class AuthProvider with ChangeNotifier {
     _token = prefs.getString('token');
     final userData = prefs.getString('currentUser');
     if (_token != null && userData != null) {
-      _currentPerson = jsonDecode(userData);
+      _currentUser = UserModel.fromJson(jsonDecode(userData));
       notifyListeners();
     }
   }

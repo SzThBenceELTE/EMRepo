@@ -177,7 +177,10 @@ exports.loginUser = async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    res.status(200).json({ loginToken: token });
+    res.status(200).json({
+      user,
+      token
+    });
   } catch (error) {
     console.error('Login Error:', error.message);
     res.status(500).json({ message: 'Internal server error.' });
@@ -216,6 +219,7 @@ exports.loginUser = async (req, res) => {
             surname: person.surname,
             role: person.role,
             group: person.group,
+            userId: person.userId, // Ensure this is included
           },
       });
     } catch (error) {
@@ -240,5 +244,24 @@ exports.loginUser = async (req, res) => {
     } catch (error) {
       console.error('Get Subscribed Events Error:', error);
       res.status(500).json({ message: 'Internal server error.' });
+    }
+  };
+
+  exports.getPersonByUser = async (req, res) => {
+    const { userId } = req.params;
+    console.log('userId:', userId);
+    try {
+        const user = await User.findByPk(userId, {
+            include: [Person],
+        });
+        console.log('user:', user);
+        if (user && user.Person) {
+            res.status(200).json(user.Person);
+        } else {
+            res.status(404).json({ message: 'Person not found for the user' });
+        }
+    } catch (error) {
+        console.error('Get Person By User Error:', error);
+        res.status(500).json({ message: 'Internal server error.' });
     }
   };

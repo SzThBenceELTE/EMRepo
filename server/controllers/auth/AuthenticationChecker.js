@@ -20,12 +20,20 @@ async function authenticateToken(req, res, next) {
       include: [{ model: Person }],
     });
 
+    
+
     if (!user || !user.Person) {
       return res.status(404).json({ message: 'User or associated person not found' });
     }
 
     // Attach the user with Person to req.user
-    req.user = user;
+    req.user = {
+      id: user.id,
+      email: user.email,
+      role: user.Person.role, // 'MANAGER' or 'DEVELOPER'
+      group: user.Person.group, // 'RED', 'GREEN', 'BLUE', 'YELLOW' or null
+    };
+    console.log('req.user in authenticateToken:', req.user);
     next();
   } catch (err) {
     console.error('JWT Verification Error:', err);

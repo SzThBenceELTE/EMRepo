@@ -18,4 +18,7 @@ router.get('/users/:email', userController.getUserByEmail);
 router.put('/users/:id', userController.updateUser);
 router.delete('/users/:id', userController.deleteUser);
 
+// New Route to Fetch Person by User ID
+router.get('/users/:userId/person', userController.getPersonByUser);
+
 module.exports = router;

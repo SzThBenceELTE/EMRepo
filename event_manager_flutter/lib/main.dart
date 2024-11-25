@@ -8,7 +8,11 @@ import 'screens/home_screen.dart';
 import 'screens/events_screen.dart';
 import 'screens/people_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final authProvider = AuthProvider();
+  await authProvider.loadUserData();
+
   runApp(
     MultiProvider(
       providers: [
@@ -25,7 +29,14 @@ class EventManagerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Initialize AuthProvider by loading persisted user data
-    Provider.of<AuthProvider>(context, listen: false).loadUserFromPrefs();
+    Provider.of<AuthProvider>(context, listen: false).loadUserFromPrefs().then((_) {
+      // After loading user, load current person
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.currentUser != null) {
+        final personProvider = Provider.of<PersonProvider>(context, listen: false);
+        personProvider.loadCurrentPerson(context);
+      }
+    });
 
     return MaterialApp(
       title: 'Event Manager',
@@ -34,7 +45,7 @@ class EventManagerApp extends StatelessWidget {
       ),
       home: Consumer<AuthProvider>(
         builder: (context, auth, _) {
-          if (auth.currentPerson != null) {
+          if (auth.currentUser != null) {
             return EventsScreen();
           } else {
             return LoginScreen();

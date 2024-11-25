@@ -9,6 +9,7 @@ class EventModel {
   final int maxParticipants;
   int currentParticipants;
   final List<EventModel> subevents;
+  final List<String> groups;
 
   EventModel({
     required this.id,
@@ -19,13 +20,20 @@ class EventModel {
     required this.maxParticipants,
     required this.currentParticipants,
     this.subevents = const [],
+    required this.groups,
   });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
-    var subeventsFromJson = json['subevents'] as List;
+    List<dynamic>? subeventsFromJson = json['subevents'];
     List<EventModel> subeventsList = subeventsFromJson != null
         ? subeventsFromJson.map((i) => EventModel.fromJson(i)).toList()
         : [];
+
+    List<String> groupsList = [];
+    if (json['groups'] != null && json['groups'] is List) {
+      groupsList = List<String>.from(json['groups'].map((group) => group.toString()));
+    }
+
     return EventModel(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
@@ -35,6 +43,7 @@ class EventModel {
       maxParticipants: json['maxParticipants'] ?? 0,
       currentParticipants: json['currentParticipants'] ?? 0,
       subevents: subeventsList,
+      groups: groupsList,
     );
   }
 }

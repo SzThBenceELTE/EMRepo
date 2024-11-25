@@ -1,148 +1,204 @@
-import 'dart:math';
+// lib/providers/event_provider.dart
 
-import 'package:event_manager_flutter/models/event_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/event_model.dart';
 import '../services/api_service.dart';
 import 'auth_provider.dart';
+import 'person_provider.dart';
 
 class EventProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
-  List<dynamic> _events = [];
-  List<dynamic> get events => _events;
-
+  List<EventModel> _events = [];
   Set<int> _subscribedEventIds = {};
+
+  List<EventModel> get events => _events;
   Set<int> get subscribedEventIds => _subscribedEventIds;
 
-  Future<void> loadEvents(BuildContext context) async {
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final token = authProvider.token!;
-      _events = await _apiService.fetchEvents(token);
-      notifyListeners();
+  void setEvents(List<EventModel> events) {
+    _events = events;
+    notifyListeners();
+  }
 
-      await loadSubscribedEvents(context);
-    } catch (e) {
-      throw Exception('Failed to load events');
+  Future<List<EventModel>> fetchEvents(String token) async {
+    try {
+      List<EventModel> data = await ApiService().fetchEvents(token);
+      //print('Fetched Events: $data'); // Optional: For debugging
+      return data; // Directly return the mapped EventModel instances
+    } catch (error) {
+      print('Error in EventProvider.fetchEvents: $error');
+      throw Exception('Failed to load events: $error');
     }
   }
 
-  Future<void> loadSubscribedEvents(BuildContext context) async {
-    try {
-      _subscribedEventIds.clear(); // Clear previous subscriptions
-
-
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final personId = authProvider.currentPerson!['personId'];
-      final token = authProvider.token!;
-
-      _subscribedEventIds = await _apiService.getSubscribedEventIds(personId, token);
-      notifyListeners();
-    } catch (e) {
-      throw Exception('Failed to load subscribed events');
-    }
+  void reset() {
+    _events = [];
+    _subscribedEventIds = {};
+    notifyListeners();
   }
 
-  Future<void> joinEvent(BuildContext context, int eventId) async {
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final personId = authProvider.currentPerson!['personId'];
-      final token = authProvider.token!;
+    Future<void> joinEvent(BuildContext context, int eventId) async {
+    final personProvider = Provider.of<PersonProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-      await _apiService.joinEvent(eventId, personId, token);
-      _subscribedEventIds.add(eventId);
+    final personId = personProvider.currentPerson?.id;
+    final token = authProvider.token;
 
-      // Find the event and increment currentParticipants
-      final eventIndex = _events.indexWhere((event) => event['id'] == eventId);
-      if (eventIndex != -1) {
-        _events[eventIndex]['currentParticipants'] =
-          (_events[eventIndex]['currentParticipants'] ?? 0) + 1;
+    print('Token: $token');
+    print('Person ID: $personId');
+
+    if (personId != null && token != null) {
+      try {
+        // Make API call to join the event
+        await _apiService.joinEvent(eventId, personId, token);
+        // Update the subscribed events
+        _subscribedEventIds.add(eventId);
+        // Update currentParticipants in the event model
+        _updateEventParticipantCount(eventId, increment: false);
+        notifyListeners();
+      } catch (e) {
+        print('Error joining event: $e');
+        throw e;
       }
-      else
-      {
-        for (var event in _events) {
-          if (event['subevents'] != null) {
-            final subEventIndex = event['subevents'].indexWhere((subEvent) => subEvent['id'] == eventId);
-            log(subEventIndex);
-            if (subEventIndex != -1) {
-              event['subevents'][subEventIndex]['currentParticipants'] =
-                (event['subevents'][subEventIndex]['currentParticipants'] ?? 0) + 1;
-              break;
-            }
-          }
-        }
-      }
-
-      notifyListeners();
-    } catch (e) {
-      throw Exception('Failed to join event: ${e.toString()}');
+    } else {
+      print('Person ID or token is null');
+      throw Exception('Authentication required');
     }
   }
 
   Future<void> leaveEvent(BuildContext context, int eventId) async {
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final personId = authProvider.currentPerson!['personId'];
-      final token = authProvider.token!;
+    final personProvider = Provider.of<PersonProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
+    final personId = personProvider.currentPerson?.id;
+    final token = authProvider.token;
+
+    print('Person ID: $personId');
+    print('Token: $token');
+    
+    
+
+    if (personId != null && token != null) {
+      try {
+        // Make API call to leave the event
+        await _apiService.leaveEvent(eventId, personId, token);
+        // Update the subscribed events
+        _subscribedEventIds.remove(eventId);
+        // Update currentParticipants in the event model
+        _updateEventParticipantCount(eventId, increment: false);
+        notifyListeners();
+      } catch (e) {
+        print('Error leaving event: $e');
+        throw e;
+      }
+    } else {
+      print('Person ID or token is null');
+      throw Exception('Authentication required');
+    }
+  }
+
+
+  Future<void> leaveMainEvent(BuildContext context, int eventId, List<EventModel> subEvents) async {
+  final personProvider = Provider.of<PersonProvider>(context, listen: false);
+  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+  final personId = personProvider.currentPerson?.id;
+  final token = authProvider.token;
+
+  print('Token: $token');
+  print('Person ID: $personId');
+
+  if (personId != null && token != null) {
+    try {
+      // Check and leave only subscribed subevents
+      for (var subEvent in subEvents) {
+        if (_subscribedEventIds.contains(subEvent.id)) {
+          await _apiService.leaveEvent(subEvent.id, personId, token);
+          _subscribedEventIds.remove(subEvent.id);
+          print('Left subevent: ${subEvent.id}');
+        } else {
+          print('Not subscribed to subevent: ${subEvent.id}, skipping.');
+        }
+      }
+
+      // Leave the main event
       await _apiService.leaveEvent(eventId, personId, token);
       _subscribedEventIds.remove(eventId);
-
-      // Find the event and decrement currentParticipants
-      final eventIndex = _events.indexWhere((event) => event['id'] == eventId);
-      if (eventIndex != -1) {
-        _events[eventIndex]['currentParticipants'] =
-            (_events[eventIndex]['currentParticipants'] ?? 1) - 1;
-      }
-      else
-      {
-        for (var event in _events) {
-          if (event['subevents'] != null) {
-            final subEventIndex = event['subevents'].indexWhere((subEvent) => subEvent['id'] == eventId);
-            if (subEventIndex != -1) {
-              event['subevents'][subEventIndex]['currentParticipants'] =
-                  (event['subevents'][subEventIndex]['currentParticipants'] ?? 1) - 1;
-              break;
-            }
-          }
-        }
-      }
+      // Update currentParticipants in the event model
+      _updateEventParticipantCount(eventId, increment: false);
 
       notifyListeners();
+      print('Successfully left the main event.');
     } catch (e) {
-      throw Exception('Failed to leave event: ${e.toString()}');
+      print('Error leaving main event and subevents: $e');
+      throw e;
+    }
+  } else {
+    print('Person ID or token is null');
+    throw Exception('Authentication required');
+  }
+}
+
+  /// Loads events by fetching them from the API and setting them in the provider.
+  Future<void> loadEvents(BuildContext context) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
+
+    if (token == null) {
+      // Handle the case where the token is not available
+      throw Exception('Authentication token not found.');
+    }
+
+    try {
+      final fetchedEvents = await fetchEvents(token);
+      setEvents(fetchedEvents);
+    } catch (error) {
+      // Handle errors accordingly
+      throw Exception('Failed to load events: $error');
     }
   }
 
-  // New method to leave main event and all its sub-events
-  Future<void> leaveMainEvent(BuildContext context, int mainEventId, List<dynamic> subEvents) async {
-    try {
-      
-
-      // Unsubscribe from all sub-events
-      for (var subEvent in subEvents) {
-        if (_subscribedEventIds.contains(subEvent['id'])) {
-          await leaveEvent(context, subEvent['id']);
+  void _updateEventParticipantCount(int eventId, {required bool increment}) {
+    void updateCount(List<EventModel> events) {
+      for (var event in events) {
+        if (event.id == eventId) {
+          if (increment) {
+            event.currentParticipants += 1;
+          } else {
+            event.currentParticipants = (event.currentParticipants > 0)
+                ? event.currentParticipants - 1
+                : 0;
+          }
+          break;
+        }
+        // Recursively update subevents
+        if (event.subevents.isNotEmpty) {
+          updateCount(event.subevents);
         }
       }
-
-      // Unsubscribe from main event
-      await leaveEvent(context, mainEventId);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unsubscribed from main event and all sub-events'),
-        ),
-      );
-    } catch (e) {
-      throw Exception('Failed to unsubscribe from main event and sub-events: $e');
     }
+
+    updateCount(_events);
   }
 
-  // EventProvider.dart
-  void reset() {
-    _events.clear();
-    _subscribedEventIds.clear();
-    notifyListeners();
+
+  Future<void> fetchSubscribedEventIds(BuildContext context) async {
+    final personProvider = Provider.of<PersonProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    final personId = personProvider.currentPerson?.id;
+    final token = authProvider.token;
+
+    if (personId != null && token != null) {
+      try {
+        final ids = await _apiService.fetchSubscribedEventIds(personId, token);
+        print('subscribe event ids: $ids');
+        _subscribedEventIds = ids;
+        notifyListeners();
+      } catch (e) {
+        print('Error fetching subscribed event IDs: $e');
+        throw e;
+      }
+    }
   }
 }

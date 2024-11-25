@@ -35,6 +35,18 @@ const Event = sequelize.define(
         key: 'id',
       },
     },
+    groups: {
+      type: DataTypes.TEXT, // Use TEXT to store JSON string
+      allowNull: false,
+      defaultValue: '[]', // Empty JSON array as a string
+      get() {
+        const rawValue = this.getDataValue('groups');
+        return JSON.parse(rawValue);
+      },
+      set(value) {
+        this.setDataValue('groups', JSON.stringify(value));
+      },
+    },
   },
   {
     //tableName: 'Events', // Explicitly define the table name
@@ -89,23 +101,30 @@ Event.getAll = async () => {
   });;
 };
 
-Event.createEvent = async (name, type, startDate, endDate, maxParticipants, parentId) => {
-  console.log("Model");
-  console.log(name, type, startDate, endDate, maxParticipants, parentId);
-  return await Event.create({ 
-    name, 
-    type, 
-    startDate, 
-    endDate, 
-    maxParticipants, 
-    parentId: parentId || null, });
+Event.createEvent = async (name, type, startDate, endDate, maxParticipants, parentId, groups) => {
+  try {
+    const event = await Event.create({
+      name,
+      type,
+      startDate,
+      endDate,
+      maxParticipants,
+      parentId: parentId || null,
+      groups, // Assign groups directly
+    });
+    return event;
+  } catch (error) {
+    console.error('Create Event Error:', error);
+    throw error;
+  }
 };
 
+// Fetch Event by ID Including Associated Groups
 Event.findById = async (id) => {
   return await Event.findByPk(id);
 };
 
-Event.updateEvent = async (id, name, type, startDate, endDate, maxParticipants, parentId) => {
+Event.updateEvent = async (id, name, type, startDate, endDate, maxParticipants, parentId, groups) => {
   const event = await Event.findByPk(id);
   if (event) {
     event.name = name;
@@ -114,6 +133,7 @@ Event.updateEvent = async (id, name, type, startDate, endDate, maxParticipants, 
     event.endDate = endDate;
     event.maxParticipants = maxParticipants;
     event.parentId = parentId;
+    event.groups = groups;
     return await event.save();
   }
   return null; // Event not found

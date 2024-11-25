@@ -1,11 +1,15 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
+import '../models/person_model.dart'; // Ensure this model exists
+import '../models/event_model.dart';
+import '../models/user_model.dart';
+import '../models/login_response.dart';
 
 class ApiService {
   static const String _baseUrl = 'http://localhost:3000/api';
 
-  Future<String> login(String username, String password) async {
+  Future<LoginResponse> login(String username, String password) async {
     final response = await http.post(
       Uri.parse('$_baseUrl/users/login'),
       headers: {'Content-Type': 'application/json'},
@@ -13,11 +17,10 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      log('Login successful, token: ${data['loginToken']}');
-      return data['loginToken']; // Return the JWT token
+      print(jsonDecode(response.body));
+      return LoginResponse.fromJson(jsonDecode(response.body));
     } else {
-      throw Exception('Failed to log in');
+      throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to login');
     }
   }
 
@@ -67,7 +70,7 @@ class ApiService {
     }
   }
 
-  Future<List<dynamic>> fetchEvents(String token) async {
+  Future<List<EventModel>> fetchEvents(String token) async {
     final response = await http.get(
       Uri.parse('$_baseUrl/events'),
       headers: {
@@ -77,7 +80,8 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      List<dynamic> data = json.decode(response.body);
+      return data.map((json) => EventModel.fromJson(json)).toList();
     } else {
       throw Exception('Failed to load events');
     }
@@ -99,13 +103,16 @@ class ApiService {
     }
   }
 
+  // api_service.dart
+
+
   Future<void> joinEvent(int eventId, int personId, String token) async {
     final url = Uri.parse('$_baseUrl/events/join');
     final response = await http.post(
       url,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token', // If you're using JWT
+        'Authorization': 'Bearer $token',
       },
       body: jsonEncode({
         'eventId': eventId,
@@ -113,11 +120,9 @@ class ApiService {
       }),
     );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data;
-    } else {
-      throw Exception('Failed to fetch events');
+    if (response.statusCode != 200) {
+      print('Failed to join event: ${response.body}');
+      throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to join event');
     }
   }
 
@@ -136,9 +141,11 @@ class ApiService {
     );
 
     if (response.statusCode != 200) {
+      print('Failed to leave event: ${response.body}');
       throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to leave event');
     }
   }
+
 
   // Optional: Fetch subscription status
   Future<bool> isSubscribed(int eventId, int personId, String token) async {
@@ -174,6 +181,47 @@ class ApiService {
     throw Exception('Failed to fetch subscribed event IDs');
   }
 }
+
+Future<PersonModel> fetchPersonByUserId(int userId, String token) async {
+    final url = Uri.parse('$_baseUrl/users/$userId/person');
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    //print('Response status: ${response.statusCode}');
+    //print('Response body: ${response.body}');
+    print(jsonDecode(response.body));
+    if (response.statusCode == 200) {
+      //print(jsonDecode(response.body));
+      return PersonModel.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to fetch person');
+    }
+  }
+
+  Future<Set<int>> fetchSubscribedEventIds(int personId, String token) async {
+    final url = Uri.parse('$_baseUrl/people/$personId/subscribed-events');
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      print(response.body);
+      final data = jsonDecode(response.body);
+      List<dynamic> ids = data['subscribedEventIds'];
+      return ids.map((id) => id as int).toSet();
+    } else {
+      throw Exception('Failed to fetch subscribed event IDs');
+    }
+  }
 
   // Add other API methods as needed
 }

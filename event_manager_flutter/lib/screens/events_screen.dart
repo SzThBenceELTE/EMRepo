@@ -5,6 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/event_provider.dart';
+import '../providers/person_provider.dart';
+import '../models/user_model.dart';
+import '../models/event_model.dart';
+import '../services/event_service.dart';
+import '../models/user_model.dart';
+import '../models/person_model.dart';
+import '../services/api_service.dart';
 
 class EventsScreen extends StatefulWidget {
   @override
@@ -12,11 +19,113 @@ class EventsScreen extends StatefulWidget {
 }
 
 class _EventsScreenState extends State<EventsScreen> {
+  bool _isLoading = true;
+  String? _errorMessage;
+  PersonModel? _currentPerson;
+
   @override
   void initState() {
     super.initState();
-    _loadEventsAndSubscriptions();
+    _loadEventsAndFilter();
   }
+
+  /// Fetches events from the backend and applies role-based filtering.
+  Future<void> _loadEventsAndFilter() async {
+    try {
+
+
+      print('loading events and filtering');
+      
+      final personProvider = Provider.of<PersonProvider>(context, listen: false);
+      await personProvider.loadCurrentPerson(context);
+      print('loaded current person');
+      
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final currentUser = authProvider.currentUser;
+      print('got current user');
+
+      if (currentUser == null) {
+        throw Exception('No authenticated user found.');
+      }
+
+      // Fetch subscribed event IDs after loading current person
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      await eventProvider.fetchSubscribedEventIds(context);
+      print('Fetched subscribed event IDs');
+
+      // Fetch the associated Person
+      final apiService = ApiService();
+      //print('currentUser: ${currentUser}');
+      //print('authProvider.token: ${authProvider.token}');
+      _currentPerson = await apiService.fetchPersonByUserId(currentUser.id, authProvider.token!);
+      //print("Current Person: $_currentPerson");
+
+      
+
+      // Fetch events after obtaining currentPerson
+      final events = await Provider.of<EventProvider>(context, listen: false).fetchEvents(authProvider.token!);
+      //print("Events after fetch: $events");
+
+      final filtered = _filterEvents(events, _currentPerson!);
+      print("Filtered events: $filtered");
+
+      // Update EventProvider with filtered events
+      Provider.of<EventProvider>(context, listen: false).setEvents(filtered);
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      print("Events loaded and filtered successfully.");
+    } catch (error) {
+      setState(() {
+        _errorMessage = 'Error fetching events: $error';
+        _isLoading = false;
+      });
+      print('Error fetching events: $error');
+    }
+  }
+
+  List<EventModel> _filterEvents(List<EventModel> events, PersonModel currentPerson) {
+  print('_filterEvents');
+
+  if (currentPerson.role == RoleTypeEnum.MANAGER) {
+    print('Manager');
+    return events;
+  } else if (currentPerson.role == RoleTypeEnum.DEVELOPER && currentPerson.group != null) {
+    print('Developer');
+    print('Person group: "${currentPerson.group}"');
+
+    // Convert GroupTypeEnum to String before normalization
+    final groupEnum = currentPerson.group!;
+    final groupString = groupEnum.toString().split('.').last; // Extract enum name as String
+    final normalizedPersonGroup = groupString.trim().toLowerCase();
+    print('Normalized Person group: "$normalizedPersonGroup"');
+
+    // Filter events where any of the event's groups match the person's group
+    final filteredEvents = events.where((event) {
+      // Normalize each group in the event
+      final normalizedEventGroups = event.groups.map((g) => g.trim().toLowerCase()).toList();
+      print('Event ID: ${event.id}, Name: "${event.name}", Groups: $normalizedEventGroups');
+
+      bool isMatch = normalizedEventGroups.contains(normalizedPersonGroup);
+
+      if (isMatch) {
+        print('Matched Event ID: ${event.id}, Name: "${event.name}"');
+      } else {
+        print('No match for Event ID: ${event.id}, Name: "${event.name}"');
+      }
+
+      return isMatch;
+    }).toList();
+
+    print('Filtered events count: ${filteredEvents.length}');
+    return filteredEvents;
+  }
+
+  print('No matching role or group. Returning empty list.');
+  return [];
+}
 
   Future<void> _loadEventsAndSubscriptions() async {
     final eventProvider = Provider.of<EventProvider>(context, listen: false);
@@ -28,7 +137,7 @@ class _EventsScreenState extends State<EventsScreen> {
     final eventProvider = Provider.of<EventProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
-    final person = authProvider.currentPerson;
+    final person = authProvider.currentUser;
 
     return Scaffold(
       appBar: AppBar(
@@ -60,17 +169,18 @@ class _EventsScreenState extends State<EventsScreen> {
               itemCount: eventProvider.events.length,
               itemBuilder: (context, index) {
                 final event = eventProvider.events[index];
-                final name = event['name'] ?? 'No Name';
-                final type = event['type'] ?? 'No Type';
-                final startDate = _formatDate(event['startDate']);
-                final endDate = _formatDate(event['endDate']);
+                final name = event.name ?? 'No Name';
+                final type = event.type ?? 'No Type';
+                final startDate = _formatDate(event.startDate.toString());
+                final endDate = _formatDate(event.endDate.toString());
                 final currentParticipants =
-                    event['currentParticipants']?.toString() ?? '0';
+                    event.currentParticipants.toString() ?? '0';
                 final maxParticipants =
-                    event['maxParticipants']?.toString() ?? 'N/A';
+                    event.maxParticipants.toString() ?? 'N/A';
                 final isSubscribed =
-                    eventProvider.subscribedEventIds.contains(event['id']);
-                final subEvents = event['subevents'] as List<dynamic>? ?? [];
+                    eventProvider.subscribedEventIds.contains(event.id);
+                final subEvents = event.subevents ?? [];
+
 
                 return Card(
                   shape: RoundedRectangleBorder(
@@ -158,18 +268,18 @@ class _EventsScreenState extends State<EventsScreen> {
                         SizedBox(height: 10),
                         // Display each subevent with its own ExpansionTile
                         ...subEvents.map((subEvent) {
-                          final subName = subEvent['name'] ?? 'No Name';
-                          final subType = subEvent['type'] ?? 'No Type';
+                          final subName = subEvent.name ?? 'No Name';
+                          final subType = subEvent.type ?? 'No Type';
                           final subStartDate =
-                              _formatDate(subEvent['startDate']);
-                          final subEndDate = _formatDate(subEvent['endDate']);
+                              _formatDate(subEvent.startDate.toString());
+                          final subEndDate = _formatDate(subEvent.endDate.toString());
                           final subCurrentParticipants =
-                              subEvent['currentParticipants']?.toString() ?? '0';
+                              subEvent.currentParticipants.toString() ?? '0';
                           final subMaxParticipants =
-                              subEvent['maxParticipants']?.toString() ?? 'N/A';
+                              subEvent.maxParticipants.toString() ?? 'N/A';
                           final subIsSubscribed = eventProvider
                               .subscribedEventIds
-                              .contains(subEvent['id']);
+                              .contains(subEvent.id);
 
                           return ExpansionTile(
                             title: Text(
@@ -279,7 +389,7 @@ class _EventsScreenState extends State<EventsScreen> {
                                                     eventProvider
                                                         .leaveEvent(
                                                             context,
-                                                            subEvent['id'])
+                                                            subEvent.id)
                                                         .then((_) {
                                                       ScaffoldMessenger.of(
                                                               context)
@@ -304,7 +414,7 @@ class _EventsScreenState extends State<EventsScreen> {
                                                     eventProvider
                                                         .joinEvent(
                                                             context,
-                                                            subEvent['id'])
+                                                            subEvent.id)
                                                         .then((_) {
                                                       ScaffoldMessenger.of(
                                                               context)
@@ -355,7 +465,7 @@ class _EventsScreenState extends State<EventsScreen> {
                                 if (isSubscribed) {
                                   // Unsubscribe
                                   eventProvider.leaveMainEvent(
-                                      context, event['id'], event['subevents']).then((_) {
+                                      context, event.id, event.subevents).then((_) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text('Unsubscribed from $name and all subevents'),
@@ -371,7 +481,7 @@ class _EventsScreenState extends State<EventsScreen> {
                                 } else {
                                   // Subscribe
                                   eventProvider.joinEvent(
-                                      context, event['id']).then((_) {
+                                      context, event.id).then((_) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text('Subscribed to $name'),

@@ -40,10 +40,19 @@ Event.belongsTo(Event, {
   onUpdate: 'CASCADE',
 });
 
-// Many-to-Many relationship between Event and Group
-Event.belongsToMany(Group, { through: 'EventGroups', foreignKey: 'eventId' });
-Group.belongsToMany(Event, { through: 'EventGroups', foreignKey: 'groupId' });
-
+// // Many-to-Many relationship between Event and Group
+// Event.belongsToMany(Group, {
+//     through: 'EventGroups',
+//     foreignKey: 'eventId',
+//     otherKey: 'groupId',
+//     as: 'groups', });
+  
+// Group.belongsToMany(Event, {
+//     through: 'EventGroups',
+//     foreignKey: 'groupId',
+//     otherKey: 'eventId',
+//     as: 'events',
+//   });
 
 // Sync all models (i.e., create tables if they don't exist)
 sequelize.sync({})
