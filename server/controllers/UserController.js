@@ -177,6 +177,12 @@ exports.loginUser = async (req, res) => {
       { expiresIn: '1h' }
     );
 
+    res.cookie('loginToken', token, {
+      httpOnly: true, // Cannot be accessed by client-side JavaScript
+      secure: false, // Set to true if using HTTPS
+      maxAge: 3600000, // 1 hour
+    });
+
     res.status(200).json({
       user,
       token

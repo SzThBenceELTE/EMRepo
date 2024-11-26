@@ -68,20 +68,73 @@ exports.getEvents = async (req, res) => {
 };
 
 exports.createEvent = async (req, res) => {
-    const { name, type, startDate, endDate, maxParticipants, parentId, groups } = req.body;
+  const { name, type, startDate, endDate, maxParticipants, parentId, groups } = req.body;
+  console.log("Request Body: " + JSON.stringify(req.body));
+  try {
+    // If it's a subevent (parentId is provided), fetch the main event
+    if (parentId) {
+      const mainEvent = await Event.findByPk(parentId);
+      console.log("Main Event: " + mainEvent);
+      if (!mainEvent) {
+        return res.status(404).json({ message: 'Main event not found.' });
+      }
 
-    // const validGroups = Object.values(GroupTypeEnum);
-    // const isValid = groups.every(group => validGroups.includes(group));
+      // Validate maxParticipants
+      if (maxParticipants > mainEvent.maxParticipants) {
+        return res.status(400).json({
+          message: 'Subevent cannot have more participants than the main event.',
+        });
+      }
 
-    console.log(req.body);
-    try {
-        console.log(Event);
-        const newEvent = await Event.createEvent(name, type, startDate, endDate, maxParticipants, parentId, groups);
-        res.status(201).json(newEvent);
-    } catch (error) {
-        console.error('Create Event Error: ', error);
-        res.status(500).json({ message: 'Error creating event' });
+      // Validate start date and end date
+      const mainEventStartDate = new Date(mainEvent.startDate);
+      const subEventStartDate = new Date(startDate);
+
+      console.log("Main Event date: " + mainEventStartDate);
+      console.log("Sub Event date: " + subEventStartDate);
+
+      if (subEventStartDate < mainEventStartDate) {
+        return res.status(400).json({
+          message: 'Subevent cannot start before the main event ends.',
+        });
+      }
+
+      const mainEventEndDate = new Date(mainEvent.endDate);
+
+      const twoHoursAfterMainEvent = new Date(mainEventEndDate.getTime() + 2 * 60 * 60 * 1000); // Add 2 hours
+      console.log("2 hour cutoff: " + twoHoursAfterMainEvent);
+
+      if (subEventStartDate > twoHoursAfterMainEvent) {
+        return res.status(400).json({
+          message: 'Subevent must start no later than 2 hours after the main event ends.',
+        });
+      }
+
+      // **New Validation: Subevent Groups**
+      const mainEventGroups = mainEvent.groups; // Array of group names
+      const subEventGroups = groups || []; // Subevent groups from request
+
+      // Ensure all subEventGroups are in mainEventGroups
+      const invalidGroups = subEventGroups.filter(group => !mainEventGroups.includes(group));
+      console.log("Invalid Groups: " + invalidGroups);
+
+      if (invalidGroups.length > 0) {
+        return res.status(400).json({
+          message: `Invalid group(s) for subevent: ${invalidGroups.join(', ')}. Subevent groups must be a subset of the main event's groups.`,
+        });
+      }
+
+      
+
     }
+
+    // Proceed to create the event
+    const event = await Event.createEvent(name, type, startDate, endDate, maxParticipants, parentId, groups);
+    res.status(201).json(event);
+  } catch (error) {
+    console.error('Create Event Error:', error);
+    res.status(500).json({ message: 'Error creating event' });
+  }
 };
 
 exports.getEventById = async (req, res) => {
@@ -125,19 +178,68 @@ exports.getEventById = async (req, res) => {
 };
 
 exports.updateEvent = async (req, res) => {
-    const { id } = req.params;
-    const { name, type, startDate, endDate, maxParticipants, parentId, groups } = req.body;
-    try {
-        const updatedEvent = await Event.updateEvent(id, name, type, startDate, endDate, maxParticipants, parentId, groups);
-        if (updatedEvent) {
-            res.status(200).json(updatedEvent);
-        } else {
-            res.status(404).json({ message: 'Event not found' });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error updating event' });
+  const { id } = req.params;
+  const { name, type, startDate, endDate, maxParticipants, parentId, groups } = req.body;
+  try {
+    // If updating a subevent, perform validation
+    if (parentId) {
+      const mainEvent = await Event.findByPk(parentId);
+      if (!mainEvent) {
+        return res.status(404).json({ message: 'Main event not found.' });
+      }
+
+      // Validate maxParticipants
+      if (maxParticipants > mainEvent.maxParticipants) {
+        return res.status(400).json({
+          message: 'Subevent cannot have more participants than the main event.',
+        });
+      }
+
+      // Validate start date and end date
+      const mainEventEndDate = new Date(mainEvent.endDate);
+      const subEventStartDate = new Date(startDate);
+
+      if (subEventStartDate < mainEventEndDate) {
+        return res.status(400).json({
+          message: 'Subevent cannot start before the main event ends.',
+        });
+      }
+
+      const twoHoursAfterMainEvent = new Date(
+        mainEventEndDate.getTime() + 2 * 60 * 60 * 1000
+      ); // Add 2 hours
+
+      if (subEventStartDate > twoHoursAfterMainEvent) {
+        return res.status(400).json({
+          message: 'Subevent must start no later than 2 hours after the main event ends.',
+        });
+      }
+
+      // **New Validation: Subevent Groups**
+      const mainEventGroups = mainEvent.groups; // Array of group names
+      const subEventGroups = groups || []; // Subevent groups from request
+
+      // Ensure all subEventGroups are in mainEventGroups
+      const invalidGroups = subEventGroups.filter(group => !mainEventGroups.includes(group));
+
+      if (invalidGroups.length > 0) {
+        return res.status(400).json({
+          message: `Invalid group(s) for subevent: ${invalidGroups.join(', ')}. Subevent groups must be a subset of the main event's groups.`,
+        });
+      }
     }
+
+    // Proceed to update the event
+    const updatedEvent = await Event.updateEvent(id, name, type, startDate, endDate, maxParticipants, parentId, groups);
+    if (updatedEvent) {
+      res.status(200).json(updatedEvent);
+    } else {
+      res.status(404).json({ message: 'Event not found' });
+    }
+  } catch (error) {
+    console.error('Update Event Error:', error);
+    res.status(500).json({ message: 'Error updating event' });
+  }
 };
 
 exports.deleteEvent = async (req, res) => {
