@@ -70,35 +70,91 @@ const Event = sequelize.define(
 
 
 
+// Event.getAll = async () => {
+//   return await Event.findAll({
+//     where: { parentId: null }, // Fetch only main events
+//       include: [
+//         {
+//           model: Event,
+//           as: 'subevents',
+//           include: [
+//             {
+//               model: Event,
+//               as: 'subevents', // Include nested subevents if needed
+//             },
+//           ],
+//         },
+//       ],
+//     attributes: {
+//       include: [
+//         [
+//           // Use a subquery to count participants
+//           Sequelize.literal(`(
+//             SELECT COUNT(*)
+//             FROM EventParticipants AS ep
+//             WHERE ep.EventId = Event.id
+//           )`),
+//           'currentParticipants',
+//         ],
+//       ],
+//     },
+//   });;
+// };
+
 Event.getAll = async () => {
   return await Event.findAll({
     where: { parentId: null }, // Fetch only main events
-      include: [
-        {
-          model: Event,
-          as: 'subevents',
+    include: [
+      {
+        model: Event,
+        as: 'subevents',
+        attributes: {
+          // Include all original attributes plus currentParticipants
           include: [
-            {
-              model: Event,
-              as: 'subevents', // Include nested subevents if needed
-            },
+            [
+              Sequelize.literal(`(
+                SELECT COUNT(*)
+                FROM "EventParticipants" AS ep
+                WHERE ep."EventId" = "subevents"."id"
+              )`),
+              'currentParticipants',
+            ],
           ],
         },
-      ],
+        // Include nested subevents if necessary
+        include: [
+          {
+            model: Event,
+            as: 'subevents',
+            attributes: {
+              include: [
+                [
+                  Sequelize.literal(`(
+                    SELECT COUNT(*)
+                    FROM "EventParticipants" AS ep
+                    WHERE ep."EventId" = "subevents->subevents"."id"
+                  )`),
+                  'currentParticipants',
+                ],
+              ],
+            },
+          },
+        ],
+      },
+    ],
     attributes: {
       include: [
         [
-          // Use a subquery to count participants
           Sequelize.literal(`(
             SELECT COUNT(*)
-            FROM EventParticipants AS ep
-            WHERE ep.EventId = Event.id
+            FROM "EventParticipants" AS ep
+            WHERE ep."EventId" = "Event"."id"
           )`),
           'currentParticipants',
         ],
       ],
     },
-  });;
+  });
 };
 
 Event.createEvent = async (name, type, startDate, endDate, maxParticipants, parentId, groups) => {

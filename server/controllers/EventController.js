@@ -30,25 +30,12 @@ const Sequelize = require('sequelize');
 
 exports.getEvents = async (req, res) => {
   try {
-    // Fetch all main events (parentId: null) and their subevents
     const events = await Event.findAll({
       where: { parentId: null }, // Fetch only main events
-      include: [
-        {
-          model: Event,
-          as: 'subevents',
-          include: [
-            {
-              model: Event,
-              as: 'subevents', // Include nested subevents if needed
-            },
-          ],
-        },
-      ],
       attributes: {
         include: [
           [
-            // Use a subquery to count participants
+            // Count participants for main events
             Sequelize.literal(`(
               SELECT COUNT(*)
               FROM EventParticipants AS ep
@@ -58,6 +45,44 @@ exports.getEvents = async (req, res) => {
           ],
         ],
       },
+      include: [
+        {
+          model: Event,
+          as: 'subevents',
+          attributes: {
+            include: [
+              [
+                // Count participants for first-level subevents
+                Sequelize.literal(`(
+                  SELECT COUNT(*)
+                  FROM EventParticipants AS ep
+                  WHERE ep.EventId = "subevents"."id"
+                )`),
+                'currentParticipants',
+              ],
+            ],
+          },
+          include: [
+            {
+              model: Event,
+              as: 'subevents', // Nested subevents
+              attributes: {
+                include: [
+                  [
+                    // Count participants for second-level subevents
+                    Sequelize.literal(`(
+                      SELECT COUNT(*)
+                      FROM EventParticipants AS ep
+                      WHERE ep.EventId = "subevents->subevents"."id"
+                    )`),
+                    'currentParticipants',
+                  ],
+                ],
+              },
+            },
+          ],
+        },
+      ],
     });
 
     res.status(200).json(events);
@@ -145,10 +170,34 @@ exports.getEventById = async (req, res) => {
         {
           model: Event,
           as: 'subevents',
+          attributes: {
+            include: [
+              [
+                Sequelize.literal(`(
+                  SELECT COUNT(*)
+                  FROM "EventParticipants" AS ep
+                  WHERE ep."EventId" = "subevents"."id"
+                )`),
+                'currentParticipants',
+              ],
+            ],
+          },
           include: [
             {
               model: Event,
               as: 'subevents',
+              attributes: {
+                include: [
+                  [
+                    Sequelize.literal(`(
+                      SELECT COUNT(*)
+                      FROM "EventParticipants" AS ep
+                      WHERE ep."EventId" = "subevents->subevents"."id"
+                    )`),
+                    'currentParticipants',
+                  ],
+                ],
+              },
             },
           ],
         },
@@ -158,21 +207,22 @@ exports.getEventById = async (req, res) => {
           [
             Sequelize.literal(`(
               SELECT COUNT(*)
-              FROM EventParticipants AS ep
-              WHERE ep.EventId = "Event"."id"
+              FROM "EventParticipants" AS ep
+              WHERE ep."EventId" = "Event"."id"
             )`),
             'currentParticipants',
           ],
         ],
       },
     });
+
     if (event) {
       res.status(200).json(event);
     } else {
       res.status(404).json({ message: 'Event not found' });
     }
   } catch (error) {
-    console.error(error);
+    console.error('Get Event By ID Error:', error);
     res.status(500).json({ message: 'Error retrieving event' });
   }
 };
