@@ -54,7 +54,7 @@ class EventProvider with ChangeNotifier {
         // Update the subscribed events
         _subscribedEventIds.add(eventId);
         // Update currentParticipants in the event model
-        _updateEventParticipantCount(eventId, increment: false);
+        _updateEventParticipantCount(eventId, increment: true);
         notifyListeners();
       } catch (e) {
         print('Error joining event: $e');
@@ -113,7 +113,7 @@ class EventProvider with ChangeNotifier {
       // Check and leave only subscribed subevents
       for (var subEvent in subEvents) {
         if (_subscribedEventIds.contains(subEvent.id)) {
-          await _apiService.leaveEvent(subEvent.id, personId, token);
+          await leaveEvent(context, subEvent.id);
           _subscribedEventIds.remove(subEvent.id);
           print('Left subevent: ${subEvent.id}');
         } else {

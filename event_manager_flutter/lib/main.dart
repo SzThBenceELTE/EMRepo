@@ -8,10 +8,13 @@ import 'screens/home_screen.dart';
 import 'screens/events_screen.dart';
 import 'screens/people_screen.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final authProvider = AuthProvider();
   await authProvider.loadUserData();
+
+  
 
   runApp(
     MultiProvider(
@@ -38,11 +41,23 @@ class EventManagerApp extends StatelessWidget {
       }
     });
 
+    final ThemeData lightTheme = ThemeData(
+      primarySwatch: Colors.blue,
+      brightness: Brightness.light,
+    );
+
+    // Define the dark theme
+    final ThemeData darkTheme = ThemeData(
+      primarySwatch: Colors.blue,
+      brightness: Brightness.dark,
+      // Customize the dark theme colors as needed
+    );
+
     return MaterialApp(
       title: 'Event Manager',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: ThemeMode.system,
       home: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           if (auth.currentUser != null) {

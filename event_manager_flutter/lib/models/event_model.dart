@@ -8,7 +8,7 @@ class EventModel {
   final DateTime endDate;
   final int maxParticipants;
   int currentParticipants;
-  final List<EventModel> subevents;
+  List<EventModel> subevents;
   final List<String> groups;
 
   EventModel({
