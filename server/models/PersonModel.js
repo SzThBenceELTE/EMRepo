@@ -27,14 +27,16 @@ const Person = sequelize.define(
         type: DataTypes.ENUM(GroupEnum),
         allowNull: true,
       },
-      // userId: {
-      //   type: Sequelize.INTEGER,
-      //   allowNull: true,  // Make this field nullable
-      //   references: {
-      //     model: 'users',
-      //     key: 'id',
-      //   },
-      // },
+      UserId: {
+        type: DataTypes.INTEGER,
+        allowNull: true, // Ensure this matches your requirement
+        references: {
+          model: 'Users', // Ensure this matches your User model name
+          key: 'id',
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
+      },
     },
     {
       validate: {

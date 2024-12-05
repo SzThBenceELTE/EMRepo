@@ -13,11 +13,13 @@ const Group = require('./models/GroupModel');
 
 // Define associations after models are imported
 Person.belongsTo(User, {
+  foreignKey: 'UserId',
   onDelete: 'CASCADE',
   onUpdate: 'CASCADE',
 }); // Each Person belongs to a User
 
 User.hasOne(Person, {
+  foreignKey: 'UserId',
   onDelete: 'CASCADE',
   onUpdate: 'CASCADE',
 }); // Each User has one Person

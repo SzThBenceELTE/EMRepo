@@ -1,5 +1,6 @@
 const e = require('express');
 const Person = require('../models/PersonModel');
+const User = require('../models/UserModel');
 const EventParticipants = require('../models/EventParticipants');
 
 exports.getPersons = async (req, res) => {
@@ -63,18 +64,35 @@ exports.updatePerson = async (req, res) => {
 
 exports.deletePerson = async (req, res) => {
     const { id } = req.params;
+    console.log(`Deleting person with ID: ${id}`);
+    
     try {
-        const deletedPerson = await Person.deletePerson(id);
-        if (deletedPerson) {
-            res.status(204).end();
-        } else {
-            res.status(404).json({ message: 'Person not found' });
+        const personToDelete = await Person.findByPk(id);
+
+        const userIdToDelete = personToDelete.UserId;
+        console.log(`Deleting user with ID: ${userIdToDelete}`);
+        const userToDelete = await User.findByPk(userIdToDelete);
+
+        if (!personToDelete) {
+            return res.status(404).json({ message: 'Person not found' });
         }
+
+        if (!userToDelete) {
+            console.log(`User with ID: ${userIdToDelete} not found.`);
+        }
+    
+        // Delete the person (this will cascade delete the associated user)
+        await personToDelete.destroy();
+        await userToDelete.destroy();
+        
+    
+        console.log(`Person with ID: ${id} and associated User deleted successfully.`);
+        res.status(204).end();
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error deleting person' });
+      console.error('Error deleting person:', error);
+      res.status(500).json({ message: 'Error deleting person' });
     }
-};
+  };
 
 exports.getSubscribedEvents = async (req, res) => {
     const { personId } = req.params;
