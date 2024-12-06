@@ -93,8 +93,24 @@ exports.getEvents = async (req, res) => {
 };
 
 exports.createEvent = async (req, res) => {
-  const { name, type, startDate, endDate, maxParticipants, parentId, groups } = req.body;
+  const { name, type, startDate, endDate, maxParticipants, parentId } = req.body;
   console.log("Request Body: " + JSON.stringify(req.body));
+  console.log("Request File: " + JSON.stringify(req.file));
+  let imagePath = null;
+  if (req.file) {
+    imagePath = req.file.path;
+  }
+
+  let groups = req.body.groups;
+  
+  if (!Array.isArray(groups)) {
+    if (groups) {
+      groups = [groups];
+    } else {
+      groups = [];
+    }
+  }
+
   try {
     // If it's a subevent (parentId is provided), fetch the main event
     if (parentId) {
@@ -154,7 +170,7 @@ exports.createEvent = async (req, res) => {
     }
 
     // Proceed to create the event
-    const event = await Event.createEvent(name, type, startDate, endDate, maxParticipants, parentId, groups);
+    const event = await Event.createEvent(name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups);
     res.status(201).json(event);
   } catch (error) {
     console.error('Create Event Error:', error);

@@ -22,6 +22,7 @@ const { init: initAuth } = require('./auth');
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());  // Middleware to parse JSON bodies
+app.use('/uploads', express.static('uploads')); // Serve static files from the 'uploads' directory
 
 // Logging Middleware
 app.use(morgan('combined')); // Logs detailed information about each request

@@ -10,6 +10,7 @@ class EventModel {
   int currentParticipants;
   List<EventModel> subevents;
   final List<String> groups;
+  final String? imagePath;
 
   EventModel({
     required this.id,
@@ -21,6 +22,7 @@ class EventModel {
     required this.currentParticipants,
     this.subevents = const [],
     required this.groups,
+    this.imagePath = 'assets/images/event_default.png',
   });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,9 @@ class EventModel {
       currentParticipants: json['currentParticipants'] ?? 0,
       subevents: subeventsList,
       groups: groupsList,
+      imagePath: json['imagePath'] != null  
+          ? 'http://your-backend-url/${json['imagePath']}'
+          : null,
     );
   }
 }

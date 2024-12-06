@@ -229,6 +229,14 @@ class _EventsScreenState extends State<EventsScreen> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
+                                  if (event.imagePath != null)
+                                    Image.network(
+                                      event.imagePath!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Text('Image not available');
+                                      },
+                                    ),
                                   Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,

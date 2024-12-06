@@ -27,6 +27,10 @@ const Event = sequelize.define(
     maxParticipants: {
       type: DataTypes.INTEGER,
     },
+    imagePath: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     parentId: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -157,7 +161,7 @@ Event.getAll = async () => {
   });
 };
 
-Event.createEvent = async (name, type, startDate, endDate, maxParticipants, parentId, groups) => {
+Event.createEvent = async (name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups) => {
   try {
     const event = await Event.create({
       name,
@@ -165,6 +169,7 @@ Event.createEvent = async (name, type, startDate, endDate, maxParticipants, pare
       startDate,
       endDate,
       maxParticipants,
+      imagePath: imagePath || null,
       parentId: parentId || null,
       groups, // Assign groups directly
     });
@@ -180,7 +185,7 @@ Event.findById = async (id) => {
   return await Event.findByPk(id);
 };
 
-Event.updateEvent = async (id, name, type, startDate, endDate, maxParticipants, parentId, groups) => {
+Event.updateEvent = async (id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups) => {
   const event = await Event.findByPk(id);
   if (event) {
     event.name = name;
@@ -188,6 +193,7 @@ Event.updateEvent = async (id, name, type, startDate, endDate, maxParticipants, 
     event.startDate = startDate;
     event.endDate = endDate;
     event.maxParticipants = maxParticipants;
+    event.imagePath = imagePath;
     event.parentId = parentId;
     event.groups = groups;
     return await event.save();
