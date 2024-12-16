@@ -4,6 +4,9 @@ const { Op } = require('sequelize'); // Import Sequelize operators
 const sequelize = require('./sequelize'); // Import the sequelize instance
 const bcrypt = require('bcryptjs');
 
+const fs = require('fs');
+const path = require('path');
+
 // Import models
 const Person = require('./models/PersonModel');
 const User = require('./models/UserModel');
@@ -115,6 +118,34 @@ sequelize.sync({})
       console.log(`${deletedCount} past event(s) deleted.`);
     } catch (error) {
       console.error('Error deleting past events:', error);
+    }
+
+    // **Delete unused images in the uploads/events directory**
+    try {
+      // Get all image paths from existing events
+      const eventsWithImages = await Event.findAll({
+        attributes: ['imagePath'],
+        where: {
+          imagePath: { [Op.ne]: null },
+        },
+      });
+
+      // Extract the filenames from image paths
+      const usedImageFiles = eventsWithImages.map((event) => path.basename(event.imagePath));
+
+      const uploadsDir = path.join(__dirname, 'uploads', 'events');
+      const allFiles = fs.readdirSync(uploadsDir);
+
+      // Delete files not associated with any event
+      for (const file of allFiles) {
+        if (!usedImageFiles.includes(file)) {
+          const filePath = path.join(uploadsDir, file);
+          fs.unlinkSync(filePath);
+          console.log(`Deleted unused image: ${file}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting unused images:', error);
     }
     
   })

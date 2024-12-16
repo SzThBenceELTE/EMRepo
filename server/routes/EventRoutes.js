@@ -37,4 +37,5 @@ router.post('/events/join', eventController.joinEvent);
 router.post('/events/leave', eventController.leaveEvent);
 
 
+
 module.exports = router;

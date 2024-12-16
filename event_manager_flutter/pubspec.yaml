@@ -31,8 +31,11 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^0.13.5
+  video_player: ^2.5.0  # Use the latest version of the video_player plugin
   provider: ^6.0.5
   shared_preferences: ^2.0.6
+
+  
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -54,6 +57,8 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  assets:
+    - assets/background.mp4
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

@@ -22,7 +22,6 @@ const { init: initAuth } = require('./auth');
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());  // Middleware to parse JSON bodies
-app.use('/uploads', express.static('uploads')); // Serve static files from the 'uploads' directory
 
 // Logging Middleware
 app.use(morgan('combined')); // Logs detailed information about each request
@@ -44,7 +43,7 @@ const corsOptions = {
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  // credentials: true, // Add this if you need to support cookies or HTTP authentication
+  credentials: true, // Add this if you need to support cookies or HTTP authentication
 };
 
 app.use(cors(corsOptions));
@@ -61,10 +60,12 @@ app.use(cors(corsOptions));
 
 
 // API Routes
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve static files from the 'uploads' directory
 app.use('/api', userRoutes);
 app.use('/api', personRoutes);
 app.use('/api', eventRoutes);
 app.use('/api', homeRoutes);
+
 
 // Middleware to serve static Angular files
 const angularPagePath = path.join(__dirname, '../event-manager-angular/dist/event-manager-angular');
