@@ -31,7 +31,7 @@ router.get('/events/:eventId/isSubscribed/:personId',
 router.get('/events', eventController.getEvents);
 router.post('/events', upload.single('image') , eventController.createEvent);
 router.get('/events/:id', eventController.getEventById);
-router.put('/events/:id', eventController.updateEvent);
+router.put('/events/:id', upload.single('image') , eventController.updateEvent);
 router.delete('/events/:id', eventController.deleteEvent);
 router.post('/events/join', eventController.joinEvent);
 router.post('/events/leave', eventController.leaveEvent);

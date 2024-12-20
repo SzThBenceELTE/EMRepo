@@ -107,7 +107,9 @@ const Event = sequelize.define(
 
 Event.getAll = async () => {
   return await Event.findAll({
-    where: { parentId: null }, // Fetch only main events
+    where: { parentId: null,
+      startDate: { [Op.gte]: now }, // Fetch only future events
+     }, // Fetch only main events
     include: [
       {
         model: Event,

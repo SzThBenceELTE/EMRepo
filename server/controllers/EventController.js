@@ -1,6 +1,6 @@
 const Event = require('../models/EventModel');
-const Sequelize = require('sequelize');
-
+const {Op,Sequelize} = require('sequelize');
+const now = new Date();
 
 // exports.getEvents = async (req, res) => {
 //   try {
@@ -31,7 +31,10 @@ const Sequelize = require('sequelize');
 exports.getEvents = async (req, res) => {
   try {
     const events = await Event.findAll({
-      where: { parentId: null }, // Fetch only main events
+      where: { 
+        parentId: null,
+        startDate: { [Op.gte]: now }, // Only events that haven't started yet
+      }, // Fetch only main events
       attributes: {
         include: [
           [
@@ -96,10 +99,7 @@ exports.createEvent = async (req, res) => {
   const { name, type, startDate, endDate, maxParticipants, parentId } = req.body;
   console.log("Request Body: " + JSON.stringify(req.body));
   console.log("Request File: " + JSON.stringify(req.file));
-  let imagePath = null;
-  if (req.file) {
-    imagePath = req.file.path;
-  }
+ 
 
   let groups = req.body.groups;
   
@@ -167,6 +167,11 @@ exports.createEvent = async (req, res) => {
 
       
 
+    }
+
+    let imagePath = null;
+    if (req.file) {
+      imagePath = req.file.path;
     }
 
     // Proceed to create the event
@@ -245,11 +250,28 @@ exports.getEventById = async (req, res) => {
 
 exports.updateEvent = async (req, res) => {
   const { id } = req.params;
-  const { name, type, startDate, endDate, maxParticipants, parentId, groups } = req.body;
+  const { name, type, startDate, endDate, maxParticipants, parentId} = req.body;
+  
+  console.log("Request Params: " + JSON.stringify(req.params));
+  console.log("Request Body: " + JSON.stringify(req.body));
+  console.log("Request File: " + JSON.stringify(req.file));
+ 
+  let groups = req.body.groups;
+
+  if (!Array.isArray(groups)) {
+    if (groups) {
+      groups = [groups];
+    } else {
+      groups = [];
+    }
+  }
+  
   try {
     // If updating a subevent, perform validation
+    console.log("Parent ID: " + parentId);
     if (parentId) {
       const mainEvent = await Event.findByPk(parentId);
+      console.log("Main Event: " + mainEvent);
       if (!mainEvent) {
         return res.status(404).json({ message: 'Main event not found.' });
       }
@@ -287,6 +309,7 @@ exports.updateEvent = async (req, res) => {
 
       // Ensure all subEventGroups are in mainEventGroups
       const invalidGroups = subEventGroups.filter(group => !mainEventGroups.includes(group));
+      console.log("Invalid Groups: " + invalidGroups);
 
       if (invalidGroups.length > 0) {
         return res.status(400).json({
@@ -295,8 +318,13 @@ exports.updateEvent = async (req, res) => {
       }
     }
 
+    let imagePath = null;
+    if (req.file) {
+      imagePath = req.file.path;
+    }
+
     // Proceed to update the event
-    const updatedEvent = await Event.updateEvent(id, name, type, startDate, endDate, maxParticipants, parentId, groups);
+    const updatedEvent = await Event.updateEvent(id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups);
     if (updatedEvent) {
       res.status(200).json(updatedEvent);
     } else {
@@ -304,7 +332,7 @@ exports.updateEvent = async (req, res) => {
     }
   } catch (error) {
     console.error('Update Event Error:', error);
-    res.status(500).json({ message: 'Error updating event' });
+    res.status(500).json({ message: 'Error updating event'});
   }
 };
 

@@ -106,19 +106,19 @@ sequelize.sync({})
     }
 
     // Delete events where endDate is in the past
-    try {
-      const now = new Date();
-      const deletedCount = await Event.destroy({
-        where: {
-          endDate: {
-            [Op.lt]: now
-          }
-        }
-      });
-      console.log(`${deletedCount} past event(s) deleted.`);
-    } catch (error) {
-      console.error('Error deleting past events:', error);
-    }
+    // try {
+    //   const now = new Date();
+    //   const deletedCount = await Event.destroy({
+    //     where: {
+    //       endDate: {
+    //         [Op.lt]: now
+    //       }
+    //     }
+    //   });
+    //   console.log(`${deletedCount} past event(s) deleted.`);
+    // } catch (error) {
+    //   console.error('Error deleting past events:', error);
+    // }
 
     // **Delete unused images in the uploads/events directory**
     try {
