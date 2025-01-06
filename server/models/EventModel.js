@@ -1,7 +1,7 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const {Op, Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../sequelize'); // Import from sequelize.js
 const EventEnum = require('../enums/EventEnum');
-
+const now = new Date();
 
 const Event = sequelize.define(
   'Event',

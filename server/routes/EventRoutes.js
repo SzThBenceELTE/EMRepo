@@ -29,6 +29,7 @@ const storage = multer.diskStorage({
 router.get('/events/:eventId/isSubscribed/:personId',
      eventController.isPersonSubscribedToEvent);
 router.get('/events', eventController.getEvents);
+router.get('/events/all', eventController.getAllEvents);
 router.post('/events', upload.single('image') , eventController.createEvent);
 router.get('/events/:id', eventController.getEventById);
 router.put('/events/:id', upload.single('image') , eventController.updateEvent);

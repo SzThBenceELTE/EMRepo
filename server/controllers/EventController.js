@@ -28,6 +28,10 @@ const now = new Date();
 //   }
 // };
 
+exports.getAllEvents = async (req, res) => {
+  return Event.getAll();
+};
+
 exports.getEvents = async (req, res) => {
   try {
     const events = await Event.findAll({
