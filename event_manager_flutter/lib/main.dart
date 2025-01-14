@@ -7,6 +7,7 @@ import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/events_screen.dart';
 import 'screens/people_screen.dart';
+import 'screens/calendar_screen.dart';
 
 
 void main() async {
@@ -74,6 +75,7 @@ class EventManagerApp extends StatelessWidget {
         '/home': (context) => HomeScreen(),
         '/events': (context) => EventsScreen(),
         '/people': (context) => PeopleScreen(),
+        '/calendar': (context) => CalendarScreen(),
         // '/register' : (context) => RegisterScreen(),
         // Add other routes
       },

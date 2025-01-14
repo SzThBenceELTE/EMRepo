@@ -28,12 +28,77 @@ const now = new Date();
 //   }
 // };
 
+
+
 exports.getAllEvents = async (req, res) => {
   try {
     const events = await Event.findAll({
       where: { 
         startDate: { [Op.gte]: now }, // Only events that haven't started yet
       }, // Fetch only main events
+      attributes: {
+        include: [
+          [
+            // Count participants for main events
+            Sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM EventParticipants AS ep
+              WHERE ep.EventId = "Event"."id"
+            )`),
+            'currentParticipants',
+          ],
+        ],
+      },
+      include: [
+        {
+          model: Event,
+          as: 'subevents',
+          attributes: {
+            include: [
+              [
+                // Count participants for first-level subevents
+                Sequelize.literal(`(
+                  SELECT COUNT(*)
+                  FROM EventParticipants AS ep
+                  WHERE ep.EventId = "subevents"."id"
+                )`),
+                'currentParticipants',
+              ],
+            ],
+          },
+          include: [
+            {
+              model: Event,
+              as: 'subevents', // Nested subevents
+              attributes: {
+                include: [
+                  [
+                    // Count participants for second-level subevents
+                    Sequelize.literal(`(
+                      SELECT COUNT(*)
+                      FROM EventParticipants AS ep
+                      WHERE ep.EventId = "subevents->subevents"."id"
+                    )`),
+                    'currentParticipants',
+                  ],
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    res.status(200).json(events);
+  } catch (error) {
+    console.error('Get Events Error:', error);
+    res.status(500).json({ message: 'Error retrieving events' });
+  }
+};
+
+exports.getAllAndPastEvents = async (req, res) => {
+  try {
+    const events = await Event.findAll({
       attributes: {
         include: [
           [
@@ -490,5 +555,74 @@ exports.joinEvent = async (req, res) => {
     } catch (error) {
       console.error('Check Subscription Error:', error);
       res.status(500).json({ message: 'Internal server error.' });
+    }
+  }
+
+  exports.getEventsForDate = async (req, res) => {
+    const date = req.params.date;
+    try {
+      const events = await Event.findAll({
+        where: { 
+          parentId: null,
+          startDate: { [Op.gte]: now }, // Only events that haven't started yet
+          startDate: { [Op.eq]: req.params.date }, // Only events that haven't started yet
+        }, // Fetch only main events
+        attributes: {
+          include: [
+            [
+              // Count participants for main events
+              Sequelize.literal(`(
+                SELECT COUNT(*)
+                FROM EventParticipants AS ep
+                WHERE ep.EventId = "Event"."id"
+              )`),
+              'currentParticipants',
+            ],
+          ],
+        },
+        include: [
+          {
+            model: Event,
+            as: 'subevents',
+            attributes: {
+              include: [
+                [
+                  // Count participants for first-level subevents
+                  Sequelize.literal(`(
+                    SELECT COUNT(*)
+                    FROM EventParticipants AS ep
+                    WHERE ep.EventId = "subevents"."id"
+                  )`),
+                  'currentParticipants',
+                ],
+              ],
+            },
+            include: [
+              {
+                model: Event,
+                as: 'subevents', // Nested subevents
+                attributes: {
+                  include: [
+                    [
+                      // Count participants for second-level subevents
+                      Sequelize.literal(`(
+                        SELECT COUNT(*)
+                        FROM EventParticipants AS ep
+                        WHERE ep.EventId = "subevents->subevents"."id"
+                      )`),
+                      'currentParticipants',
+                    ],
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      });
+  
+      res.status(200).json(events);
+    } catch (error) {
+      console.error('Get Events Error:', error);
+      res.status(500).json({ message: 'Error retrieving events' });
     }
   }

@@ -1,40 +1,51 @@
-// lib/screens/events_screen.dart
-
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:event_manager_flutter/screens/login_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
 import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
 import '../providers/event_provider.dart';
-import '../providers/person_provider.dart';
-import '../models/person_model.dart';
 import '../models/event_model.dart';
+import '../models/person_model.dart';
+import '../providers/auth_provider.dart';
+import '../providers/person_provider.dart';
 import '../services/api_service.dart';
 
-class EventsScreen extends StatefulWidget {
+class CalendarScreen extends StatefulWidget {
   @override
-  _EventsScreenState createState() => _EventsScreenState();
+  _CalendarScreenState createState() => _CalendarScreenState();
 }
 
-class _EventsScreenState extends State<EventsScreen> {
+class _CalendarScreenState extends State<CalendarScreen> {
+  late Map<DateTime, List<EventModel>> _events;
+  DateTime _selectedDay = DateTime.now();
+  DateTime _focusedDay = DateTime.now();
+
+  CalendarFormat _calendarFormat = CalendarFormat.month;
   bool _isLoading = true;
   String? _errorMessage;
   PersonModel? _currentPerson;
-
   @override
   void initState() {
     super.initState();
-    _loadEventsAndFilter();
+    final events = Provider.of<EventProvider>(context, listen: false).events;
+    
+    _events = {};
+    for (var event in events) {
+      DateTime eventDate = DateTime(
+        event.startDate.year,
+        event.startDate.month,
+        event.startDate.day,
+      );
+      if (_events[eventDate] == null) {
+        _events[eventDate] = [event];
+      } else {
+        _events[eventDate]!.add(event);
+      }
+    }
+
+    _loadPerson();
+
   }
 
-  /// Fetches events from the backend and applies role-based filtering.
-  Future<void> _loadEventsAndFilter() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  Future<void> _loadPerson() async {
     try {
       print('loading events and filtering');
 
@@ -61,13 +72,6 @@ class _EventsScreenState extends State<EventsScreen> {
       _currentPerson = await apiService.fetchPersonByUserId(
           currentUser.id, authProvider.token!);
 
-      // Fetch events after obtaining currentPerson
-      final events = await eventProvider.fetchEvents(authProvider.token!);
-      final filtered = _filterEvents(events, _currentPerson!);
-      print("Filtered events: $filtered");
-
-      // Update EventProvider with filtered events
-      eventProvider.setEvents(filtered);
 
       setState(() {
         _isLoading = false;
@@ -81,151 +85,94 @@ class _EventsScreenState extends State<EventsScreen> {
       });
       print('Error fetching events: $error');
     }
+    
   }
 
-  List<EventModel> _filterEvents(
-      List<EventModel> events, PersonModel currentPerson) {
-    print('_filterEvents');
-
-    if (currentPerson.role == RoleTypeEnum.MANAGER) {
-      print('Manager');
-      return events;
-    } else if (currentPerson.role == RoleTypeEnum.DEVELOPER &&
-        currentPerson.group != null) {
-      print('Developer');
-      print('Person group: "${currentPerson.group}"');
-
-      // Convert GroupTypeEnum to String before normalization
-      final groupEnum = currentPerson.group!;
-      final groupString = groupEnum.toString().split('.').last;
-      final normalizedPersonGroup = groupString.trim().toLowerCase();
-      print('Normalized Person group: "$normalizedPersonGroup"');
-
-      // Filter events and their subevents
-      final filteredEvents = events.where((event) {
-        // Normalize event groups
-        final normalizedEventGroups =
-            event.groups.map((g) => g.trim().toLowerCase()).toList();
-        print(
-            'Event ID: ${event.id}, Name: "${event.name}", Groups: $normalizedEventGroups');
-
-        bool isEventMatch =
-            normalizedEventGroups.contains(normalizedPersonGroup);
-
-        if (isEventMatch) {
-          print('Matched Event ID: ${event.id}, Name: "${event.name}"');
-
-          // Filter subevents based on group
-          event.subevents = event.subevents.where((subEvent) {
-            // Normalize subevent groups
-            final normalizedSubEventGroups =
-                subEvent.groups.map((g) => g.trim().toLowerCase()).toList();
-            print(
-                'SubEvent ID: ${subEvent.id}, Name: "${subEvent.name}", Groups: $normalizedSubEventGroups');
-
-            bool isSubEventMatch =
-                normalizedSubEventGroups.contains(normalizedPersonGroup);
-
-            if (isSubEventMatch) {
-              print(
-                  'Matched SubEvent ID: ${subEvent.id}, Name: "${subEvent.name}"');
-            } else {
-              print(
-                  'No match for SubEvent ID: ${subEvent.id}, Name: "${subEvent.name}"');
-            }
-
-            return isSubEventMatch;
-          }).toList();
-
-          return true; // Keep the event
-        } else {
-          print('No match for Event ID: ${event.id}, Name: "${event.name}"');
-          return false; // Exclude the event
-        }
-      }).toList();
-
-      print('Filtered events count: ${filteredEvents.length}');
-      return filteredEvents;
-    }
-
-    print('No matching role or group. Returning empty list.');
-    return [];
+ // Utility function to normalize DateTime (remove time components)
+  DateTime _normalizeDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
   }
+  
+
+  List<EventModel> _getEventsForDay(DateTime day) {
+    return _events[DateTime(day.year, day.month, day.day)] ?? [];
+  }
+  
 
   @override
   Widget build(BuildContext context) {
-    final eventProvider = Provider.of<EventProvider>(context);
+    final eventProvider = Provider.of<EventProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
     final person = _currentPerson;
+    
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Events'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () {
-              _loadEventsAndFilter();
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () {
-              eventProvider.reset(); // Clear event data
-              authProvider.logout();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => LoginScreen()),
-              );
-            },
-          ),
-        ],
+        title: Text('Calendar'),
       ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(),
-            )
-          : eventProvider.events.isEmpty
-              ? const Center(
-                  child: Text(
-                    'There are no events for you right now. Check back later',
-                    style: TextStyle(fontSize: 16),
-                    textAlign: TextAlign.center,
-                  ),
-                )
-              : ListView.builder(
-                  padding: EdgeInsets.all(10),
-                  itemCount: eventProvider.events.length,
-                  itemBuilder: (context, index) {
-                    final event = eventProvider.events[index];
-                    final name = event.name ?? 'No Name';
-                    final type = event.type ?? 'No Type';
-                    final startDate = _formatDate(event.startDate.toString());
-                    final endDate = _formatDate(event.endDate.toString());
-                    final currentParticipants =
-                        event.currentParticipants.toString();
-                    final maxParticipants =
-                        event.maxParticipants.toString() ?? 'N/A';
-                    final isSubscribed =
-                        eventProvider.subscribedEventIds.contains(event.id);
-                    final subEvents = event.subevents ?? [];
-                    final imagePath = event.imagePath;
-                    print('Event ID: ${event.id}, Name: $name, Image: $imagePath');
-                    final imageData = event.imageData;
+      body: Column(
+        children: [
+          TableCalendar<EventModel>(
+            firstDay: DateTime.utc(2000, 1, 1),
+            lastDay: DateTime.utc(2100, 12, 31),
+            focusedDay: _focusedDay,
+            selectedDayPredicate: (day) {
+              return isSameDay(_selectedDay, day);
+            },
+            eventLoader: _getEventsForDay,
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                _selectedDay = selectedDay;
+                _focusedDay = focusedDay;
+              });
+            },
+            calendarFormat: _calendarFormat,
+            onFormatChanged: (format) {
+              setState(() {
+                _calendarFormat = format;
+              });
+            },
+            headerStyle: HeaderStyle(
+              formatButtonVisible: false,
+            ),
+            calendarStyle: CalendarStyle(
+              todayDecoration: BoxDecoration(
+                color: Colors.blueAccent,
+                shape: BoxShape.circle,
+              ),
+              selectedDecoration: BoxDecoration(
+                color: Colors.orangeAccent,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8.0),
+          Expanded(
+            child: _getEventsForDay(_selectedDay).isEmpty
+    ? Center(child: Text('No events for this day'))
+    : ListView.builder(
+        itemCount: _getEventsForDay(_selectedDay).length,
+        itemBuilder: (context, index) {
+          final event = _getEventsForDay(_selectedDay)[index];
+          final name = event.name ?? 'No Name';
+          final type = event.type ?? 'No Type';
+          final startDate = _formatDate(event.startDate.toString());
+          final endDate = _formatDate(event.endDate.toString());
+          final currentParticipants =
+              event.currentParticipants.toString();
+          final maxParticipants =
+              event.maxParticipants.toString() ?? 'N/A';
+          final isSubscribed =
+              eventProvider.subscribedEventIds.contains(event.id);
+          final subEvents = event.subevents ?? [];
+          final imagePath = event.imagePath;
+          print(imagePath);
+          print('Event ID: ${event.id}, Name: $name, Image: $imagePath');
+          final imageData = event.imageData;
 
-                    // Decode Base64 image data if available
-                        // Uint8List? decodedImage;
-                        // if (imageData != null) {
-                        //   try {
-                        //     decodedImage = base64Decode(imageData.split(',')[1]);
-                        //   } catch (e) {
-                        //     print('Error decoding imageData for event ID ${event.id}: $e');
-                        //     decodedImage = null;
-                        //   }
-                        // }
 
-                    return Card(
+          return Card(
                       color: Colors.black12,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -274,7 +221,7 @@ class _EventsScreenState extends State<EventsScreen> {
                                           style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.white, // Text color over image
+                                            color: Colors.white30, // Text color over image
                                           ),
                                         ),
                                         SizedBox(height: 10),
@@ -307,6 +254,9 @@ class _EventsScreenState extends State<EventsScreen> {
                                           backgroundColor: isSubscribed ? Colors.red : Colors.blue,
                                         ),
                                         onPressed: () {
+                                          print('Subscribe/Unsubscribe');
+                                          print(person);
+                                          print(token);
                                           if (person != null && token != null) {
                                             if (isSubscribed) {
                                               // Unsubscribe
@@ -497,70 +447,10 @@ class _EventsScreenState extends State<EventsScreen> {
                         ),
                       ),
                     );
-                  },
-                ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Welcome message at the top
-                  Text(
-                    'Welcome, ${_currentPerson?.firstName} ${_currentPerson?.surname}',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Spacer(),
-                  // Role and Group at the bottom
-                  Text(
-                    'Role: ${_currentPerson?.role.toString().split('.').last}',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                    ),
-                  ),
-                  if (_currentPerson?.role == RoleTypeEnum.DEVELOPER &&
-                      _currentPerson?.group != null)
-                    Text(
-                      'Group: ${_currentPerson?.group.toString().split('.').last}',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            ListTile(
-              title: Text('People'),
-              onTap: () {
-                Navigator.pushNamed(context, '/people');
-              },
-            ),
-            ListTile(
-              title: Text('Calendar'),
-              onTap: () {
-                Navigator.pushNamed(context, '/calendar');
-              },
-            ),
-            ListTile(
-              title: Text('Log out'),
-              onTap: () {
-                authProvider.logout();
-                Navigator.pushReplacementNamed(context, '/');
-              },
-            ),
-          ],
-        ),
+        },
+      ),
+          ),
+        ],
       ),
     );
   }
@@ -575,7 +465,7 @@ class _EventsScreenState extends State<EventsScreen> {
     }
   }
 
-  Widget _buildEventDetailRow(IconData icon, String text) {
+    Widget _buildEventDetailRow(IconData icon, String text) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -592,4 +482,6 @@ class _EventsScreenState extends State<EventsScreen> {
       ),
     );
   }
+
 }
+

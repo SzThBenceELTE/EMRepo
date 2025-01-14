@@ -46,6 +46,12 @@ class HomeScreen extends StatelessWidget {
               },
             ),
             ListTile(
+              title: Text('Calendar'),
+              onTap: () {
+                Navigator.pushNamed(context, '/calendar');
+              },
+            ),
+            ListTile(
               title: Text('Log out'),
               onTap: () {
                 authProvider.logout();

@@ -30,6 +30,8 @@ router.get('/events/:eventId/isSubscribed/:personId',
      eventController.isPersonSubscribedToEvent);
 router.get('/events', eventController.getEvents);
 router.get('/events/all', eventController.getAllEvents);
+router.get('/events/allandpast', eventController.getAllAndPastEvents);
+router.get('/events/:date', eventController.getEventsForDate);
 router.post('/events', upload.single('image') , eventController.createEvent);
 router.get('/events/:id', eventController.getEventById);
 router.put('/events/:id', upload.single('image') , eventController.updateEvent);

@@ -15,6 +15,7 @@ class EventProvider with ChangeNotifier {
   List<EventModel> get events => _events;
   Set<int> get subscribedEventIds => _subscribedEventIds;
 
+
   void setEvents(List<EventModel> events) {
     _events = events;
     notifyListeners();
@@ -181,6 +182,7 @@ class EventProvider with ChangeNotifier {
     updateCount(_events);
   }
 
+  
 
   Future<void> fetchSubscribedEventIds(BuildContext context) async {
     final personProvider = Provider.of<PersonProvider>(context, listen: false);
@@ -201,4 +203,5 @@ class EventProvider with ChangeNotifier {
       }
     }
   }
+  
 }

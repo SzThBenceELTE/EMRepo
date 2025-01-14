@@ -34,6 +34,7 @@ dependencies:
   video_player: ^2.5.0  # Use the latest version of the video_player plugin
   provider: ^6.0.5
   shared_preferences: ^2.0.6
+  table_calendar: ^3.0.8
 
   
 
@@ -59,6 +60,7 @@ dev_dependencies:
 flutter:
   assets:
     - assets/background.mp4
+    - assets/image3-min-1.webp
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

@@ -15,7 +15,6 @@ class EventModel {
   final String? imagePath;
   final String? imageData; // New field for Base64 image data
 
-
   EventModel({
     required this.id,
     required this.name,
@@ -73,4 +72,6 @@ class EventModel {
       imageData: json['imageData'], // Assign the value from JSON
     );
   }
+
+
 }
