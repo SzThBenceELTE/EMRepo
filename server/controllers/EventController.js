@@ -556,7 +556,32 @@ exports.joinEvent = async (req, res) => {
       console.error('Check Subscription Error:', error);
       res.status(500).json({ message: 'Internal server error.' });
     }
-  }
+  };
+
+  exports.getSubscribedUsers = async (req, res) => {
+    // Get the eventId from the request (could be in req.body or as a URL parameter)
+    const eventId = req.params.eventId; // Or req.params.eventId if using URL parameters
+  
+    try {
+      // Find the event by primary key
+      const event = await Event.findByPk(eventId);
+      if (!event) {
+        return res.status(404).json({ message: 'Event not found.' });
+      }
+  
+      // Assuming the association is set up with a method like getPeople()
+      // If your association uses a different alias, adjust accordingly.
+      const subscribedUsers = await event.getPeople();
+  
+      // Optionally, you can format the users or filter fields before sending
+      res.status(200).json({ 
+        subscribedUsers: subscribedUsers 
+      });
+    } catch (error) {
+      console.error('Error fetching subscribed users:', error);
+      res.status(500).json({ message: 'Internal server error.' });
+    }
+  };
 
   exports.getEventsForDate = async (req, res) => {
     const date = req.params.date;

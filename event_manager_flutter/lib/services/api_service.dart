@@ -222,6 +222,39 @@ Future<PersonModel> fetchPersonByUserId(int userId, String token) async {
       throw Exception('Failed to fetch subscribed event IDs');
     }
   }
+  
+   /// Fetches the list of subscribed users for a given event.
+  Future<List<PersonModel>> fetchSubscribedUsers({
+    required int eventId,
+    required String token,
+  }) async {
+    final url = Uri.parse('$_baseUrl/events/$eventId/subscribedUsers');
+    
+    
+    // Send request with proper headers including authentication token.
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',  // if you use Bearer tokens
+      },
+    );
+
+    if (response.statusCode == 200) {
+      // Parse the response into a list.
+      final data = jsonDecode(response.body);
+      // Here, we assume the response looks like: { subscribedUsers: [ {...}, {...}, ... ] }
+      final List<dynamic> usersJson = data['subscribedUsers'];
+      
+      // Map each JSON object to a PersonModel instance.
+      return usersJson
+          .map((json) => PersonModel.fromJson(json))
+          .toList();
+    } else {
+      throw Exception('Failed to load subscribed users');
+    }
+  }
+
 
   // Add other API methods as needed
 }

@@ -1,3 +1,5 @@
+import 'package:event_manager_flutter/screens/eventDetails_screen.dart';
+import 'package:event_manager_flutter/widgets/default_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:provider/provider.dart';
@@ -146,6 +148,38 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 shape: BoxShape.circle,
               ),
             ),
+            calendarBuilders: CalendarBuilders<EventModel>(
+              markerBuilder: (context, date, events) {
+                if (events.isEmpty) return SizedBox();
+
+                // Get the EventProvider so we can check subscription status.
+                final eventProvider = Provider.of<EventProvider>(context, listen: false);
+
+                // Create a list of dots (one for each event on this day)
+                return Positioned(
+                  bottom: 1,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: events.map((event) {
+                      // Determine dot color based on subscription status.
+                      // You can customize these colors as needed.
+                      final isSubscribed = eventProvider.subscribedEventIds.contains(event.id);
+                      final dotColor = isSubscribed ? Colors.green : Colors.red;
+
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: dotColor,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                );
+              },
+            ),
           ),
           const SizedBox(height: 8.0),
           Expanded(
@@ -179,12 +213,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ),
                       elevation: 4,
                       margin: EdgeInsets.symmetric(vertical: 8, horizontal: 5),
-                      
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.black,
+                          color: Colors.deepPurpleAccent,
                           borderRadius: BorderRadius.circular(10),
-                          image: imagePath != null
+                          image: (imagePath != null && imagePath.isNotEmpty)
                               ? DecorationImage(
                                   image: NetworkImage(imagePath),
                                   fit: BoxFit.cover,
@@ -197,11 +230,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         child: Container(
                           padding: EdgeInsets.all(15),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: event.imagePath != null
-                                ? Colors.black.withOpacity(0.65)
-                                : Colors.white, // Overlay color
-                          ),
+                              borderRadius: BorderRadius.circular(10),
+                              color: Colors.black.withOpacity(0.65)),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -210,25 +240,33 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 flex: 1,
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     // Removed Image.network as it's now a background
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           name,
                                           style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.white30, // Text color over image
+                                            color: Colors
+                                                .white, // Text color over image
                                           ),
                                         ),
                                         SizedBox(height: 10),
                                         // Main Event Details
-                                        _buildEventDetailRow(Icons.category, type),
-                                        _buildEventDetailRow(Icons.calendar_today, 'Start: $startDate'),
-                                        _buildEventDetailRow(Icons.calendar_today_outlined, 'End: $endDate'),
+                                        _buildEventDetailRow(
+                                            Icons.category, type),
+                                        _buildEventDetailRow(
+                                            Icons.calendar_today,
+                                            'Start: $startDate'),
+                                        _buildEventDetailRow(
+                                            Icons.calendar_today_outlined,
+                                            'End: $endDate'),
                                         _buildEventDetailRow(
                                           Icons.people,
                                           'Participants: $currentParticipants / $maxParticipants',
@@ -242,66 +280,116 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                         //     },
                                         //   )
                                         // else
-                                          
                                       ],
                                     ),
                                     const SizedBox(height: 10),
                                     // Subscribe/Unsubscribe Button
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: isSubscribed ? Colors.red : Colors.blue,
+                                    Column(
+                                      children: [
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: isSubscribed
+                                                  ? Colors.red
+                                                  : Colors.blue,
+                                            ),
+                                            onPressed: () {
+                                              if (person != null &&
+                                                  token != null) {
+                                                if (isSubscribed) {
+                                                  // Unsubscribe
+                                                  eventProvider
+                                                      .leaveMainEvent(
+                                                          context,
+                                                          event.id,
+                                                          event.subevents)
+                                                      .then((_) {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                            'Unsubscribed from $name and all subevents'),
+                                                      ),
+                                                    );
+                                                    setState(() {});
+                                                  }).catchError((error) {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                            'Failed to unsubscribe: $error'),
+                                                      ),
+                                                    );
+                                                  });
+                                                } else {
+                                                  // Subscribe
+                                                  eventProvider
+                                                      .joinEvent(
+                                                          context, event.id)
+                                                      .then((_) {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                            'Subscribed to $name'),
+                                                      ),
+                                                    );
+                                                    setState(() {});
+                                                  }).catchError((error) {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                            'Failed to subscribe: $error'),
+                                                      ),
+                                                    );
+                                                  });
+                                                }
+                                              }
+                                            },
+                                            child: Text(
+                                              isSubscribed
+                                                  ? 'Unsubscribe'
+                                                  : 'Subscribe',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          ),
                                         ),
-                                        onPressed: () {
-                                          print('Subscribe/Unsubscribe');
-                                          print(person);
-                                          print(token);
-                                          if (person != null && token != null) {
-                                            if (isSubscribed) {
-                                              // Unsubscribe
-                                              eventProvider.leaveMainEvent(context, event.id, event.subevents)
-                                                .then((_) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text('Unsubscribed from $name and all subevents'),
-                                                    ),
-                                                  );
-                                                  setState(() {});
-                                                })
-                                                .catchError((error) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text('Failed to unsubscribe: $error'),
-                                                    ),
-                                                  );
-                                                });
-                                            } else {
-                                              // Subscribe
-                                              eventProvider.joinEvent(context, event.id)
-                                                .then((_) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text('Subscribed to $name'),
-                                                    ),
-                                                  );
-                                                  setState(() {});
-                                                })
-                                                .catchError((error) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text('Failed to subscribe: $error'),
-                                                    ),
-                                                  );
-                                                });
-                                            }
-                                          }
-                                        },
-                                        child: Text(
-                                          isSubscribed ? 'Unsubscribe' : 'Subscribe',
-                                          style: TextStyle(color: Colors.white),
+                                        Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 5)),
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.green,
+                                            ),
+                                            onPressed: () {
+                                              // Navigate to the event details page
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      EventDetailsScreen(
+                                                          event: event,
+                                                          token: token!),
+                                                ),
+                                              );
+                                            },
+                                            child: Text(
+                                              'Details',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          ),
                                         ),
-                                      ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -310,129 +398,195 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               if (subEvents.isNotEmpty) ...[
                                 SizedBox(width: 10),
                                 Expanded(
-                                  
                                   flex: 1,
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Subevents',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.white, // Text color over image
+                                          color: Colors
+                                              .white, // Text color over image
                                         ),
                                       ),
                                       SizedBox(height: 5),
-                                        Container(
-                                          
-                                          height: 200, // Adjust as needed
-                                          decoration: BoxDecoration(
-                                            border: Border.all(color: Colors.grey.shade300),
-                                            borderRadius: BorderRadius.circular(8),
-                                            color: Colors.black.withOpacity(0.5),
-                                          ),
-                                          child: ListView.builder(
-                                            itemCount: subEvents.length,
-                                            itemBuilder: (context, subIndex) {
-                                              final subEvent = subEvents[subIndex];
-                                              final subName = subEvent.name ?? 'No Name';
-                                              final subType = subEvent.type ?? 'No Type';
-                                              final subStartDate = _formatDate(subEvent.startDate.toString());
-                                              final subEndDate = _formatDate(subEvent.endDate.toString());
-                                              final subCurrentParticipants = subEvent.currentParticipants.toString();
-                                              final subMaxParticipants = subEvent.maxParticipants.toString() ?? 'N/A';
-                                              final subIsSubscribed = eventProvider.subscribedEventIds.contains(subEvent.id);
-                                              final subImagePath = subEvent.imagePath;
+                                      Container(
+                                        height: 200, // Adjust as needed
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                              color: Colors.grey.shade300),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          color: Colors.black.withOpacity(0.5),
+                                        ),
+                                        child: ListView.builder(
+                                          itemCount: subEvents.length,
+                                          itemBuilder: (context, subIndex) {
+                                            final subEvent =
+                                                subEvents[subIndex];
+                                            final subName =
+                                                subEvent.name ?? 'No Name';
+                                            final subType =
+                                                subEvent.type ?? 'No Type';
+                                            final subStartDate = _formatDate(
+                                                subEvent.startDate.toString());
+                                            final subEndDate = _formatDate(
+                                                subEvent.endDate.toString());
+                                            final subCurrentParticipants =
+                                                subEvent.currentParticipants
+                                                    .toString();
+                                            final subMaxParticipants = subEvent
+                                                    .maxParticipants
+                                                    .toString() ??
+                                                'N/A';
+                                            final subIsSubscribed =
+                                                eventProvider.subscribedEventIds
+                                                    .contains(subEvent.id);
+                                            final subImagePath =
+                                                subEvent.imagePath;
 
-                                              return ExpansionTile(
-                                                title: Text(
-                                                  subName,
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.white, // Text color over image
+                                            return ExpansionTile(
+                                              title: Text(
+                                                subName,
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors
+                                                      .white, // Text color over image
+                                                ),
+                                              ),
+                                              children: [
+                                                Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                      vertical: 5,
+                                                      horizontal: 10),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      _buildEventDetailRow(
+                                                          Icons.category,
+                                                          subType),
+                                                      _buildEventDetailRow(
+                                                          Icons.calendar_today,
+                                                          'Start: $subStartDate'),
+                                                      _buildEventDetailRow(
+                                                        Icons
+                                                            .calendar_today_outlined,
+                                                        'End: $subEndDate',
+                                                      ),
+                                                      _buildEventDetailRow(
+                                                        Icons.people,
+                                                        'Participants: $subCurrentParticipants / $subMaxParticipants',
+                                                      ),
+                                                      const SizedBox(
+                                                          height: 10),
+                                                      // Subscribe/Unsubscribe Button for Subevent
+                                                      Align(
+                                                        alignment: Alignment
+                                                            .centerRight,
+                                                        child: Column(
+                                                          children: [
+                                                            ElevatedButton(
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                backgroundColor:
+                                                                    subIsSubscribed
+                                                                        ? Colors
+                                                                            .red
+                                                                        : Colors
+                                                                            .blue,
+                                                              ),
+                                                              onPressed:
+                                                                  isSubscribed
+                                                                      ? () {
+                                                                          if (person != null &&
+                                                                              token != null) {
+                                                                            if (subIsSubscribed) {
+                                                                              // Unsubscribe from subevent
+                                                                              eventProvider.leaveEvent(context, subEvent.id).then((_) {
+                                                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                                                  SnackBar(
+                                                                                    content: Text('Unsubscribed from $subName'),
+                                                                                  ),
+                                                                                );
+                                                                                setState(() {});
+                                                                              }).catchError((error) {
+                                                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                                                  SnackBar(
+                                                                                    content: Text('Failed to unsubscribe: $error'),
+                                                                                  ),
+                                                                                );
+                                                                              });
+                                                                            } else {
+                                                                              // Subscribe to subevent
+                                                                              eventProvider.joinEvent(context, subEvent.id).then((_) {
+                                                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                                                  SnackBar(
+                                                                                    content: Text('Subscribed to $subName'),
+                                                                                  ),
+                                                                                );
+                                                                                setState(() {});
+                                                                              }).catchError((error) {
+                                                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                                                  SnackBar(
+                                                                                    content: Text('Failed to subscribe: $error'),
+                                                                                  ),
+                                                                                );
+                                                                              });
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      : null,
+                                                              child: Text(
+                                                                subIsSubscribed
+                                                                    ? 'Unsubscribe'
+                                                                    : 'Subscribe',
+                                                                style: TextStyle(
+                                                                    color: Colors
+                                                                        .white),
+                                                              ),
+                                                            ),
+                                                            ElevatedButton(
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                backgroundColor:
+                                                                    Colors
+                                                                        .green,
+                                                              ),
+                                                              onPressed: () {
+                                                                // Navigate to the event details page
+                                                                Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                    builder: (context) => EventDetailsScreen(
+                                                                        event:
+                                                                            event,
+                                                                        token:
+                                                                            token!),
+                                                                  ),
+                                                                );
+                                                              },
+                                                              child: Text(
+                                                                'Details',
+                                                                style: TextStyle(
+                                                                    color: Colors
+                                                                        .white),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      // View Details Button
+                                                    ],
                                                   ),
                                                 ),
-                                                children: [
-                                                  Padding(
-                                                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                                                    
-                                                      child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      
-                                                      children: [
-                                                        _buildEventDetailRow(Icons.category, subType),
-                                                        _buildEventDetailRow(Icons.calendar_today, 'Start: $subStartDate'),
-                                                        _buildEventDetailRow(
-                                                          Icons.calendar_today_outlined,
-                                                          'End: $subEndDate',
-                                                        ),
-                                                        _buildEventDetailRow(
-                                                          Icons.people,
-                                                          'Participants: $subCurrentParticipants / $subMaxParticipants',
-                                                        ),
-                                                        const SizedBox(height: 10),
-                                                        // Subscribe/Unsubscribe Button for Subevent
-                                                        Align(
-                                                          alignment: Alignment.centerRight,
-                                                          child: ElevatedButton(
-                                                            style: ElevatedButton.styleFrom(
-                                                              backgroundColor: subIsSubscribed ? Colors.red : Colors.blue,
-                                                            ),
-                                                            onPressed: isSubscribed
-                                                                ? () {
-                                                                    if (person != null && token != null) {
-                                                                      if (subIsSubscribed) {
-                                                                        // Unsubscribe from subevent
-                                                                        eventProvider.leaveEvent(context, subEvent.id)
-                                                                          .then((_) {
-                                                                            ScaffoldMessenger.of(context).showSnackBar(
-                                                                              SnackBar(
-                                                                                content: Text('Unsubscribed from $subName'),
-                                                                              ),
-                                                                            );
-                                                                            setState(() {});
-                                                                          })
-                                                                          .catchError((error) {
-                                                                            ScaffoldMessenger.of(context).showSnackBar(
-                                                                              SnackBar(
-                                                                                content: Text('Failed to unsubscribe: $error'),
-                                                                              ),
-                                                                            );
-                                                                          });
-                                                                      } else {
-                                                                        // Subscribe to subevent
-                                                                        eventProvider.joinEvent(context, subEvent.id)
-                                                                          .then((_) {
-                                                                            ScaffoldMessenger.of(context).showSnackBar(
-                                                                              SnackBar(
-                                                                                content: Text('Subscribed to $subName'),
-                                                                              ),
-                                                                            );
-                                                                            setState(() {});
-                                                                          })
-                                                                          .catchError((error) {
-                                                                            ScaffoldMessenger.of(context).showSnackBar(
-                                                                              SnackBar(
-                                                                                content: Text('Failed to subscribe: $error'),
-                                                                              ),
-                                                                            );
-                                                                          });
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                : null,
-                                                            child: Text(
-                                                              subIsSubscribed ? 'Unsubscribe' : 'Subscribe',
-                                                              style: TextStyle(color: Colors.white),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                
                                               ],
                                             );
                                           },
@@ -452,14 +606,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         ],
       ),
+      drawer: DefaultDrawer(),
     );
+    
   }
 
   /// Helper method to format date strings
   String _formatDate(String dateString) {
     try {
       DateTime date = DateTime.parse(dateString);
-      return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}";
+      return "${date.hour}:${date.minute.toString().padLeft(2, '0')}";
     } catch (e) {
       return dateString;
     }

@@ -1,5 +1,6 @@
 // lib/providers/event_provider.dart
 
+import 'package:event_manager_flutter/models/person_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/event_model.dart';
@@ -11,6 +12,7 @@ class EventProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
   List<EventModel> _events = [];
   Set<int> _subscribedEventIds = {};
+  final Map<int, List<PersonModel>> _subscribedUsersCache = {};
 
   List<EventModel> get events => _events;
   Set<int> get subscribedEventIds => _subscribedEventIds;
@@ -201,6 +203,27 @@ class EventProvider with ChangeNotifier {
         print('Error fetching subscribed event IDs: $e');
         throw e;
       }
+    }
+  }
+
+  List<PersonModel> getSubscribedUsersForEvent(int eventId) {
+    return _subscribedUsersCache[eventId] ?? [];
+  }
+
+  /// Fetch and store subscribed users for an event
+  Future<void> fetchSubscribedUsers({
+    required int eventId,
+    required String token,
+  }) async {
+    try {
+      final users = await _apiService.fetchSubscribedUsers(
+        eventId: eventId,
+        token: token,
+      );
+      _subscribedUsersCache[eventId] = users;
+      notifyListeners();
+    } catch (error) {
+      throw Exception('Error fetching subscribed users: $error');
     }
   }
   
