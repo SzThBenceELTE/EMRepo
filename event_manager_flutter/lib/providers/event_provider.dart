@@ -11,15 +11,18 @@ import 'person_provider.dart';
 class EventProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
   List<EventModel> _events = [];
+  List<EventModel> _allEvents = [];
   Set<int> _subscribedEventIds = {};
   final Map<int, List<PersonModel>> _subscribedUsersCache = {};
 
   List<EventModel> get events => _events;
+  List<EventModel> get allEvents => _allEvents;
   Set<int> get subscribedEventIds => _subscribedEventIds;
 
 
   void setEvents(List<EventModel> events) {
     _events = events;
+    _allEvents = allEvents;
     notifyListeners();
   }
 
@@ -34,8 +37,20 @@ class EventProvider with ChangeNotifier {
     }
   }
 
+  Future<List<EventModel>> fetchAllEvents(String token) async {
+    try {
+      List<EventModel> data = await ApiService().fetchAllEvents(token);
+      //print('Fetched Events: $data'); // Optional: For debugging
+      return data; // Directly return the mapped EventModel instances
+    } catch (error) {
+      print('Error in EventProvider.fetchAllEvents: $error');
+      throw Exception('Failed to load events: $error');
+    }
+  }
+
   void reset() {
     _events = [];
+    _allEvents = [];
     _subscribedEventIds = {};
     notifyListeners();
   }

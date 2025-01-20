@@ -22,41 +22,46 @@ class DefaultDrawer extends StatelessWidget {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: Colors.blue,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Welcome message at the top
-                Text(
-                  'Welcome, ${currentPerson?.firstName ?? ''} ${currentPerson?.surname ?? ''}',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Spacer(),
-                // Role and Group at the bottom
-                Text(
-                  'Role: ${currentPerson?.role.toString().split('.').last ?? ''}',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
-                  ),
-                ),
-                if (currentPerson?.role == RoleTypeEnum.DEVELOPER &&
-                    currentPerson?.group != null)
+          InkWell(
+            onTap: () {
+              Navigator.pushNamed(context, '/profile');
+            },
+            child: DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Welcome message at the top
                   Text(
-                    'Group: ${currentPerson?.group.toString().split('.').last}',
+                    'Welcome, ${currentPerson?.firstName ?? ''} ${currentPerson?.surname ?? ''}',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Spacer(),
+                  // Role and Group at the bottom
+                  Text(
+                    'Role: ${currentPerson?.role.toString().split('.').last ?? ''}',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
                     ),
                   ),
-              ],
+                  if (currentPerson?.role == RoleTypeEnum.DEVELOPER &&
+                      currentPerson?.group != null)
+                    Text(
+                      'Group: ${currentPerson?.group.toString().split('.').last}',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 16,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
           ListTile(

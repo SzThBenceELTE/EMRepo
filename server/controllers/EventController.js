@@ -1,4 +1,5 @@
 const Event = require('../models/EventModel');
+const EventParticipants = require('../models/EventParticipants');
 const {Op,Sequelize} = require('sequelize');
 const now = new Date();
 
@@ -589,8 +590,8 @@ exports.joinEvent = async (req, res) => {
       const events = await Event.findAll({
         where: { 
           parentId: null,
-          startDate: { [Op.gte]: now }, // Only events that haven't started yet
-          startDate: { [Op.eq]: req.params.date }, // Only events that haven't started yet
+          //startDate: { [Op.gte]: now }, // Only events that haven't started yet
+          startDate: { [Op.eq]: req.params.date }, // Only events that happen today
         }, // Fetch only main events
         attributes: {
           include: [
@@ -651,3 +652,89 @@ exports.joinEvent = async (req, res) => {
       res.status(500).json({ message: 'Error retrieving events' });
     }
   }
+
+  exports.getSubscribedEventsForPerson = async (req, res) => {
+    const { personId } = req.params;
+    console.log('Fetching subscribed events for personId:', personId);
+  
+    try {
+      // Fetch all event subscription records for the person
+      const subscriptions = await EventParticipants.findAll({
+        where: { personId: personId },
+        attributes: ['eventId'],
+      });
+  
+      // Map to an array of event IDs
+      const eventIds = subscriptions.map(sub => sub.eventId);
+      console.log('Subscribed Event IDs:', eventIds);
+  
+      // If there are no subscribed events, return an empty array
+      if (eventIds.length === 0) {
+        return res.status(200).json({ subscribedEvents: [] });
+      }
+  
+      // Fetch the full event details corresponding to these IDs.
+      // You can include associations (such as subevents, participant counts, etc.)
+      const events = await Event.findAll({
+        where: {
+          id: {
+            [Op.in]: eventIds,
+          },
+        },
+        // Example: Include subevents and current participant counts if needed
+        attributes: {
+          include: [
+            [
+              Sequelize.literal(`(
+                SELECT COUNT(*)
+                FROM "EventParticipants" AS ep
+                WHERE ep."EventId" = "Event"."id"
+              )`),
+              'currentParticipants',
+            ],
+          ],
+        },
+        include: [
+          {
+            model: Event,
+            as: 'subevents',
+            attributes: {
+              include: [
+                [
+                  Sequelize.literal(`(
+                    SELECT COUNT(*)
+                    FROM "EventParticipants" AS ep
+                    WHERE ep."EventId" = "subevents"."id"
+                  )`),
+                  'currentParticipants',
+                ],
+              ],
+            },
+            include: [
+              {
+                model: Event,
+                as: 'subevents', // Nested subevents
+                attributes: {
+                  include: [
+                    [
+                      Sequelize.literal(`(
+                        SELECT COUNT(*)
+                        FROM "EventParticipants" AS ep
+                        WHERE ep."EventId" = "subevents->subevents"."id"
+                      )`),
+                      'currentParticipants',
+                    ],
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      });
+  
+      res.status(200).json({ subscribedEvents: events });
+    } catch (error) {
+      console.error('Error fetching subscribed events:', error);
+      res.status(500).json({ message: 'Internal server error.' });
+    }
+  };

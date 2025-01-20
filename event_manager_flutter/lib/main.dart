@@ -1,3 +1,4 @@
+import 'package:event_manager_flutter/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
@@ -76,6 +77,7 @@ class EventManagerApp extends StatelessWidget {
         '/events': (context) => EventsScreen(),
         '/people': (context) => PeopleScreen(),
         '/calendar': (context) => CalendarScreen(),
+        '/profile': (context) => ProfileScreen(),
         // '/register' : (context) => RegisterScreen(),
         // Add other routes
       },

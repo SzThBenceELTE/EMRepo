@@ -39,6 +39,7 @@ router.delete('/events/:id', eventController.deleteEvent);
 router.post('/events/join', eventController.joinEvent);
 router.post('/events/leave', eventController.leaveEvent);
 router.get('/events/:eventId/subscribedUsers', eventController.getSubscribedUsers);
+router.get('/events/:personId/subscribedEvents', eventController.getSubscribedEventsForPerson);
 
 
 

@@ -87,6 +87,23 @@ class ApiService {
     }
   }
 
+  Future<List<EventModel>> fetchAllEvents(String token) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/events/allandpast'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> data = json.decode(response.body);
+      return data.map((json) => EventModel.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load events');
+    }
+  }
+
   Future<List<dynamic>> fetchPeople(String token) async {
     final response = await http.get(
       Uri.parse('$_baseUrl/people'),
@@ -255,6 +272,27 @@ Future<PersonModel> fetchPersonByUserId(int userId, String token) async {
     }
   }
 
+  Future<List<EventModel>> getSubscribedEventsForPerson({
+    required int personId,
+    required String token,
+  }) async {
+    final url = Uri.parse('$_baseUrl/events/$personId/subscribedEvents');
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      List<dynamic> eventsJson = data['subscribedEvents'];
+      return eventsJson.map((json) => EventModel.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to fetch subscribed events for personId $personId');
+    }
+  }
 
   // Add other API methods as needed
 }
