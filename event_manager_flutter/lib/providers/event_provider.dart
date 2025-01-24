@@ -20,7 +20,7 @@ class EventProvider with ChangeNotifier {
   Set<int> get subscribedEventIds => _subscribedEventIds;
 
 
-  void setEvents(List<EventModel> events) {
+  void setEvents(List<EventModel> events, List<EventModel> allEvents) {
     _events = events;
     _allEvents = allEvents;
     notifyListeners();
@@ -40,7 +40,7 @@ class EventProvider with ChangeNotifier {
   Future<List<EventModel>> fetchAllEvents(String token) async {
     try {
       List<EventModel> data = await ApiService().fetchAllEvents(token);
-      //print('Fetched Events: $data'); // Optional: For debugging
+      print('Fetched Events: $data'); // Optional: For debugging
       return data; // Directly return the mapped EventModel instances
     } catch (error) {
       print('Error in EventProvider.fetchAllEvents: $error');
@@ -169,7 +169,8 @@ class EventProvider with ChangeNotifier {
 
     try {
       final fetchedEvents = await fetchEvents(token);
-      setEvents(fetchedEvents);
+      final fetchedAllEvents = await fetchAllEvents(token);
+      setEvents(fetchedEvents, fetchedAllEvents);
     } catch (error) {
       // Handle errors accordingly
       throw Exception('Failed to load events: $error');

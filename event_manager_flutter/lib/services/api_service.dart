@@ -89,7 +89,7 @@ class ApiService {
 
   Future<List<EventModel>> fetchAllEvents(String token) async {
     final response = await http.get(
-      Uri.parse('$_baseUrl/events/allandpast'),
+      Uri.parse('$_baseUrl/events/allandpastmain'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',

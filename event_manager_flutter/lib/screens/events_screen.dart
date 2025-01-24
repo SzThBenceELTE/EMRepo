@@ -14,6 +14,7 @@ import '../providers/person_provider.dart';
 import '../models/person_model.dart';
 import '../models/event_model.dart';
 import '../services/api_service.dart';
+import '../utils/card_builder.dart';
 
 class EventsScreen extends StatefulWidget {
   @override
@@ -28,6 +29,7 @@ class _EventsScreenState extends State<EventsScreen> {
   // Keep both lists
   List<EventModel> _allEvents = [];
   List<EventModel> _filteredEvents = [];
+  List<bool> _visibleList = [];
 
   // Controller for search field
   TextEditingController _searchController = TextEditingController();
@@ -37,6 +39,28 @@ class _EventsScreenState extends State<EventsScreen> {
     super.initState();
     _loadEventsAndFilter();
     _searchController.addListener(_filterByName);
+  }
+
+  /// Initialize the visibility list after loading events
+  void _initializeVisibility() {
+    _visibleList = List<bool>.filled(_allEvents.length, false);
+    // Trigger fade-in for each card with a delay
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startFadeInAnimations();
+    });
+  }
+
+  /// Start fade-in animations sequentially
+  void _startFadeInAnimations() {
+    for (int i = 0; i < _visibleList.length; i++) {
+      Future.delayed(Duration(milliseconds: 100 * i), () {
+        if (mounted) {
+          setState(() {
+            _visibleList[i] = true;
+          });
+        }
+      });
+    }
   }
 
   /// Fetches events from the backend and applies role-based filtering.
@@ -73,17 +97,20 @@ class _EventsScreenState extends State<EventsScreen> {
 
       // Fetch events after obtaining currentPerson
       final events = await eventProvider.fetchEvents(authProvider.token!);
+      final allEvents = await eventProvider.fetchAllEvents(authProvider.token!);
       final filtered = _filterEvents(events, _currentPerson!);
       print("Filtered events: $filtered");
 
       // Update EventProvider with filtered events
-      eventProvider.setEvents(filtered);
+      eventProvider.setEvents(filtered, allEvents);
 
       setState(() {
         _allEvents = filtered;
         _filteredEvents = List.from(filtered);
         _isLoading = false;
       });
+
+      _initializeVisibility();
 
       print("Events loaded and filtered successfully.");
     } catch (error) {
@@ -236,6 +263,10 @@ class _EventsScreenState extends State<EventsScreen> {
                           itemCount: _filteredEvents.length,
                           itemBuilder: (context, index) {
                             final event = _filteredEvents[index];
+                            final isVisible = index < _visibleList.length
+                                ? _visibleList[index]
+                                : false;
+
                             final name = event.name ?? 'No Name';
                             final type = event.type ?? 'No Type';
                             final startDate =
@@ -266,120 +297,308 @@ class _EventsScreenState extends State<EventsScreen> {
                             //   }
                             // }
 
-                            return Card(
-                              color: Colors.black12,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              elevation: 4,
-                              margin: EdgeInsets.symmetric(
-                                  vertical: 8, horizontal: 5),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.deepPurpleAccent,
-                                  borderRadius: BorderRadius.circular(10),
-                                  image: (imagePath != null &&
-                                          imagePath.isNotEmpty)
-                                      ? DecorationImage(
-                                          image: NetworkImage(imagePath),
-                                          fit: BoxFit.cover,
-                                          onError: (error, stackTrace) {
-                                            // Handle image loading error
-                                          },
-                                        )
-                                      : null,
+                           return CardBuilder.createCard(
+                              context: context,
+                              eventProvider: eventProvider,
+                              person: person,
+                              token: token,
+                              event: event,
+                              name: name,
+                              type: type,
+                              startDate: startDate,
+                              endDate: endDate,
+                              currentParticipants: currentParticipants,
+                              maxParticipants: maxParticipants,
+                              subEvents: subEvents,
+                              imagePath: imagePath,
+                              isSubscribed: isSubscribed,
+                            );
+                            
+                          },
+                        ),
+                ),
+              ],
+            ),
+      drawer: DefaultDrawer(),
+    );
+  }
+
+  Card _createCard(
+                  EventProvider eventProvider,
+                  BuildContext context,
+                  PersonModel? person,
+                  String? token,
+                  EventModel event, 
+                  String name,
+                  String type,
+                  String startDate,
+                  String endDate,
+                  String currentParticipants,
+                  String maxParticipants,
+                  List<EventModel> subEvents,
+                  String? imagePath,
+                  bool isSubscribed) {
+    return Card(
+      color: Colors.black12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      elevation: 4,
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 5),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.deepPurpleAccent,
+          borderRadius: BorderRadius.circular(10),
+          image: (imagePath != null && imagePath.isNotEmpty)
+              ? DecorationImage(
+                  image: NetworkImage(imagePath),
+                  fit: BoxFit.cover,
+                  onError: (error, stackTrace) {
+                    // Handle image loading error
+                  },
+                )
+              : null,
+        ),
+        child: Container(
+          padding: EdgeInsets.all(15),
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.black.withOpacity(0.65)),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left Column: Main Event Info
+              Expanded(
+                flex: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Removed Image.network as it's now a background
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white, // Text color over image
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        // Main Event Details
+                        _buildEventDetailRow(Icons.category, type),
+                        _buildEventDetailRow(
+                            Icons.calendar_today, 'Start: $startDate'),
+                        _buildEventDetailRow(
+                            Icons.calendar_today_outlined, 'End: $endDate'),
+                        _buildEventDetailRow(
+                          Icons.people,
+                          'Participants: $currentParticipants / $maxParticipants',
+                        ),
+                        // if (decodedImage != null)
+                        //   Image.memory(
+                        //     decodedImage,
+                        //     fit: BoxFit.cover,
+                        //     errorBuilder: (context, error, stackTrace) {
+                        //       return Text('Error loading image');
+                        //     },
+                        //   )
+                        // else
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    // Subscribe/Unsubscribe Button
+                    Row(
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  isSubscribed ? Colors.red : Colors.blue,
+                            ),
+                            onPressed: () {
+                              if (person != null && token != null) {
+                                if (isSubscribed) {
+                                  // Unsubscribe
+                                  eventProvider
+                                      .leaveMainEvent(
+                                          context, event.id, event.subevents)
+                                      .then((_) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            'Unsubscribed from $name and all subevents'),
+                                      ),
+                                    );
+                                    setState(() {});
+                                  }).catchError((error) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            'Failed to unsubscribe: $error'),
+                                      ),
+                                    );
+                                  });
+                                } else {
+                                  // Subscribe
+                                  eventProvider
+                                      .joinEvent(context, event.id)
+                                      .then((_) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Subscribed to $name'),
+                                      ),
+                                    );
+                                    setState(() {});
+                                  }).catchError((error) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content:
+                                            Text('Failed to subscribe: $error'),
+                                      ),
+                                    );
+                                  });
+                                }
+                              }
+                            },
+                            child: Icon(
+                              isSubscribed ? Icons.remove : Icons.add,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        Padding(padding: EdgeInsets.symmetric(vertical: 2)),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                            ),
+                            onPressed: () {
+                              // Navigate to the event details page
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EventDetailsScreen(
+                                      event: event, token: token!),
                                 ),
-                                child: Container(
-                                  padding: EdgeInsets.all(15),
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      color: Colors.black.withOpacity(0.65)),
-                                  child: Row(
+                              );
+                            },
+                            child: Icon(
+                              Icons.book,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Right Column: Subevents
+              if (subEvents.isNotEmpty) ...[
+                SizedBox(width: 10),
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Subevents',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white, // Text color over image
+                        ),
+                      ),
+                      SizedBox(height: 5),
+                      Container(
+                        height: 200, // Adjust as needed
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.black.withOpacity(0.5),
+                        ),
+                        child: ListView.builder(
+                          itemCount: subEvents.length,
+                          itemBuilder: (context, subIndex) {
+                            final subEvent = subEvents[subIndex];
+                            final subName = subEvent.name ?? 'No Name';
+                            final subType = subEvent.type ?? 'No Type';
+                            final subStartDate =
+                                _formatDate(subEvent.startDate.toString());
+                            final subEndDate =
+                                _formatDate(subEvent.endDate.toString());
+                            final subCurrentParticipants =
+                                subEvent.currentParticipants.toString();
+                            final subMaxParticipants =
+                                subEvent.maxParticipants.toString() ?? 'N/A';
+                            final subIsSubscribed = eventProvider
+                                .subscribedEventIds
+                                .contains(subEvent.id);
+                            final subImagePath = subEvent.imagePath;
+
+                            return ExpansionTile(
+                              title: Text(
+                                subName,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white, // Text color over image
+                                ),
+                              ),
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 5, horizontal: 10),
+                                  child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      // Left Column: Main Event Info
-                                      Expanded(
-                                        flex: 1,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
+                                      _buildEventDetailRow(
+                                          Icons.category, subType),
+                                      _buildEventDetailRow(Icons.calendar_today,
+                                          'Start: $subStartDate'),
+                                      _buildEventDetailRow(
+                                        Icons.calendar_today_outlined,
+                                        'End: $subEndDate',
+                                      ),
+                                      _buildEventDetailRow(
+                                        Icons.people,
+                                        'Participants: $subCurrentParticipants / $subMaxParticipants',
+                                      ),
+                                      const SizedBox(height: 10),
+                                      // Subscribe/Unsubscribe Button for Subevent
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Row(
                                           children: [
-                                            // Removed Image.network as it's now a background
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  name,
-                                                  style: TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors
-                                                        .white, // Text color over image
-                                                  ),
-                                                ),
-                                                SizedBox(height: 10),
-                                                // Main Event Details
-                                                _buildEventDetailRow(
-                                                    Icons.category, type),
-                                                _buildEventDetailRow(
-                                                    Icons.calendar_today,
-                                                    'Start: $startDate'),
-                                                _buildEventDetailRow(
-                                                    Icons
-                                                        .calendar_today_outlined,
-                                                    'End: $endDate'),
-                                                _buildEventDetailRow(
-                                                  Icons.people,
-                                                  'Participants: $currentParticipants / $maxParticipants',
-                                                ),
-                                                // if (decodedImage != null)
-                                                //   Image.memory(
-                                                //     decodedImage,
-                                                //     fit: BoxFit.cover,
-                                                //     errorBuilder: (context, error, stackTrace) {
-                                                //       return Text('Error loading image');
-                                                //     },
-                                                //   )
-                                                // else
-                                              ],
-                                            ),
-                                            const SizedBox(height: 10),
-                                            // Subscribe/Unsubscribe Button
-                                            Row(
-                                              children: [
-                                                Align(
-                                                  alignment:
-                                                      Alignment.centerLeft,
-                                                  child: ElevatedButton(
-                                                    style: ElevatedButton
-                                                        .styleFrom(
-                                                      backgroundColor:
-                                                          isSubscribed
-                                                              ? Colors.red
-                                                              : Colors.blue,
-                                                    ),
-                                                    onPressed: () {
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: subIsSubscribed
+                                                    ? Colors.red
+                                                    : Colors.blue,
+                                              ),
+                                              onPressed: isSubscribed
+                                                  ? () {
                                                       if (person != null &&
                                                           token != null) {
-                                                        if (isSubscribed) {
-                                                          // Unsubscribe
+                                                        if (subIsSubscribed) {
+                                                          // Unsubscribe from subevent
                                                           eventProvider
-                                                              .leaveMainEvent(
+                                                              .leaveEvent(
                                                                   context,
-                                                                  event.id,
-                                                                  event
-                                                                      .subevents)
+                                                                  subEvent.id)
                                                               .then((_) {
                                                             ScaffoldMessenger
                                                                     .of(context)
                                                                 .showSnackBar(
                                                               SnackBar(
                                                                 content: Text(
-                                                                    'Unsubscribed from $name and all subevents'),
+                                                                    'Unsubscribed from $subName'),
                                                               ),
                                                             );
                                                             setState(() {});
@@ -395,18 +614,18 @@ class _EventsScreenState extends State<EventsScreen> {
                                                             );
                                                           });
                                                         } else {
-                                                          // Subscribe
+                                                          // Subscribe to subevent
                                                           eventProvider
                                                               .joinEvent(
                                                                   context,
-                                                                  event.id)
+                                                                  subEvent.id)
                                                               .then((_) {
                                                             ScaffoldMessenger
                                                                     .of(context)
                                                                 .showSnackBar(
                                                               SnackBar(
                                                                 content: Text(
-                                                                    'Subscribed to $name'),
+                                                                    'Subscribed to $subName'),
                                                               ),
                                                             );
                                                             setState(() {});
@@ -423,274 +642,56 @@ class _EventsScreenState extends State<EventsScreen> {
                                                           });
                                                         }
                                                       }
-                                                    },
-                                                    child: Icon(
-                                                      isSubscribed
-                                                          ? Icons.remove
-                                                          : Icons.add,
-                                                      color: Colors.white,
-                                                    ),
+                                                    }
+                                                  : null,
+                                              child: Icon(
+                                                isSubscribed
+                                                    ? Icons.remove
+                                                    : Icons.add,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.green,
+                                              ),
+                                              onPressed: () {
+                                                // Navigate to the event details page
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        EventDetailsScreen(
+                                                            event: event,
+                                                            token: token!),
                                                   ),
-                                                ),
-                                                Padding(
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                            vertical: 2)),
-                                                Align(
-                                                  alignment:
-                                                      Alignment.centerLeft,
-                                                  child: ElevatedButton(
-                                                    style: ElevatedButton
-                                                        .styleFrom(
-                                                      backgroundColor:
-                                                          Colors.green,
-                                                    ),
-                                                    onPressed: () {
-                                                      // Navigate to the event details page
-                                                      Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              EventDetailsScreen(
-                                                                  event: event,
-                                                                  token:
-                                                                      token!),
-                                                        ),
-                                                      );
-                                                    },
-                                                    child: Icon(
-                                                      Icons.book,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
+                                                );
+                                              },
+                                              child: Icon(
+                                                Icons.book,
+                                                color: Colors.white,
+                                              ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                      // Right Column: Subevents
-                                      if (subEvents.isNotEmpty) ...[
-                                        SizedBox(width: 10),
-                                        Expanded(
-                                          flex: 1,
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Subevents',
-                                                style: TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors
-                                                      .white, // Text color over image
-                                                ),
-                                              ),
-                                              SizedBox(height: 5),
-                                              Container(
-                                                height: 200, // Adjust as needed
-                                                decoration: BoxDecoration(
-                                                  border: Border.all(
-                                                      color:
-                                                          Colors.grey.shade300),
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  color: Colors.black
-                                                      .withOpacity(0.5),
-                                                ),
-                                                child: ListView.builder(
-                                                  itemCount: subEvents.length,
-                                                  itemBuilder:
-                                                      (context, subIndex) {
-                                                    final subEvent =
-                                                        subEvents[subIndex];
-                                                    final subName =
-                                                        subEvent.name ??
-                                                            'No Name';
-                                                    final subType =
-                                                        subEvent.type ??
-                                                            'No Type';
-                                                    final subStartDate =
-                                                        _formatDate(subEvent
-                                                            .startDate
-                                                            .toString());
-                                                    final subEndDate =
-                                                        _formatDate(subEvent
-                                                            .endDate
-                                                            .toString());
-                                                    final subCurrentParticipants =
-                                                        subEvent
-                                                            .currentParticipants
-                                                            .toString();
-                                                    final subMaxParticipants =
-                                                        subEvent.maxParticipants
-                                                                .toString() ??
-                                                            'N/A';
-                                                    final subIsSubscribed =
-                                                        eventProvider
-                                                            .subscribedEventIds
-                                                            .contains(
-                                                                subEvent.id);
-                                                    final subImagePath =
-                                                        subEvent.imagePath;
-
-                                                    return ExpansionTile(
-                                                      title: Text(
-                                                        subName,
-                                                        style: TextStyle(
-                                                          fontSize: 16,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          color: Colors
-                                                              .white, // Text color over image
-                                                        ),
-                                                      ),
-                                                      children: [
-                                                        Padding(
-                                                          padding: EdgeInsets
-                                                              .symmetric(
-                                                                  vertical: 5,
-                                                                  horizontal:
-                                                                      10),
-                                                          child: Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            children: [
-                                                              _buildEventDetailRow(
-                                                                  Icons
-                                                                      .category,
-                                                                  subType),
-                                                              _buildEventDetailRow(
-                                                                  Icons
-                                                                      .calendar_today,
-                                                                  'Start: $subStartDate'),
-                                                              _buildEventDetailRow(
-                                                                Icons
-                                                                    .calendar_today_outlined,
-                                                                'End: $subEndDate',
-                                                              ),
-                                                              _buildEventDetailRow(
-                                                                Icons.people,
-                                                                'Participants: $subCurrentParticipants / $subMaxParticipants',
-                                                              ),
-                                                              const SizedBox(
-                                                                  height: 10),
-                                                              // Subscribe/Unsubscribe Button for Subevent
-                                                              Align(
-                                                                alignment: Alignment
-                                                                    .centerRight,
-                                                                child: Row(
-                                                                  children: [
-                                                                    ElevatedButton(
-                                                                      style: ElevatedButton
-                                                                          .styleFrom(
-                                                                        backgroundColor: subIsSubscribed
-                                                                            ? Colors.red
-                                                                            : Colors.blue,
-                                                                      ),
-                                                                      onPressed: isSubscribed
-                                                                          ? () {
-                                                                              if (person != null && token != null) {
-                                                                                if (subIsSubscribed) {
-                                                                                  // Unsubscribe from subevent
-                                                                                  eventProvider.leaveEvent(context, subEvent.id).then((_) {
-                                                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                                                      SnackBar(
-                                                                                        content: Text('Unsubscribed from $subName'),
-                                                                                      ),
-                                                                                    );
-                                                                                    setState(() {});
-                                                                                  }).catchError((error) {
-                                                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                                                      SnackBar(
-                                                                                        content: Text('Failed to unsubscribe: $error'),
-                                                                                      ),
-                                                                                    );
-                                                                                  });
-                                                                                } else {
-                                                                                  // Subscribe to subevent
-                                                                                  eventProvider.joinEvent(context, subEvent.id).then((_) {
-                                                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                                                      SnackBar(
-                                                                                        content: Text('Subscribed to $subName'),
-                                                                                      ),
-                                                                                    );
-                                                                                    setState(() {});
-                                                                                  }).catchError((error) {
-                                                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                                                      SnackBar(
-                                                                                        content: Text('Failed to subscribe: $error'),
-                                                                                      ),
-                                                                                    );
-                                                                                  });
-                                                                                }
-                                                                              }
-                                                                            }
-                                                                          : null,
-                                                                      child:
-                                                                          Icon(
-                                                                        isSubscribed
-                                                                            ? Icons.remove
-                                                                            : Icons.add,
-                                                                        color: Colors
-                                                                            .white,
-                                                                      ),
-                                                                    ),
-                                                                    ElevatedButton(
-                                                                      style: ElevatedButton
-                                                                          .styleFrom(
-                                                                        backgroundColor:
-                                                                            Colors.green,
-                                                                      ),
-                                                                      onPressed:
-                                                                          () {
-                                                                        // Navigate to the event details page
-                                                                        Navigator
-                                                                            .push(
-                                                                          context,
-                                                                          MaterialPageRoute(
-                                                                            builder: (context) =>
-                                                                                EventDetailsScreen(event: event, token: token!),
-                                                                          ),
-                                                                        );
-                                                                      },
-                                                                      child:
-                                                                          Icon(
-                                                                        Icons
-                                                                            .book,
-                                                                        color: Colors
-                                                                            .white,
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                              // View Details Button
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    );
-                                                  },
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
+                                      // View Details Button
                                     ],
                                   ),
                                 ),
-                              ),
+                              ],
                             );
                           },
                         ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-            ),
-      drawer: DefaultDrawer(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

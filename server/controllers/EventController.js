@@ -160,6 +160,70 @@ exports.getAllAndPastEvents = async (req, res) => {
   }
 };
 
+exports.getAllAndPastMainEvents = async (req, res) => {
+  try {
+    const events = await Event.findAll({
+      where: {parentId: null},
+      attributes: {
+        include: [
+          [
+            // Count participants for main events
+            Sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM EventParticipants AS ep
+              WHERE ep.EventId = "Event"."id"
+            )`),
+            'currentParticipants',
+          ],
+        ],
+      },
+      include: [
+        {
+          model: Event,
+          as: 'subevents',
+          attributes: {
+            include: [
+              [
+                // Count participants for first-level subevents
+                Sequelize.literal(`(
+                  SELECT COUNT(*)
+                  FROM EventParticipants AS ep
+                  WHERE ep.EventId = "subevents"."id"
+                )`),
+                'currentParticipants',
+              ],
+            ],
+          },
+          include: [
+            {
+              model: Event,
+              as: 'subevents', // Nested subevents
+              attributes: {
+                include: [
+                  [
+                    // Count participants for second-level subevents
+                    Sequelize.literal(`(
+                      SELECT COUNT(*)
+                      FROM EventParticipants AS ep
+                      WHERE ep.EventId = "subevents->subevents"."id"
+                    )`),
+                    'currentParticipants',
+                  ],
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    res.status(200).json(events);
+  } catch (error) {
+    console.error('Get Events Error:', error);
+    res.status(500).json({ message: 'Error retrieving events' });
+  }
+};
+
 exports.getEvents = async (req, res) => {
   try {
     const events = await Event.findAll({
