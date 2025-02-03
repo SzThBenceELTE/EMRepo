@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 class ApiPersonService {
   static const String _baseUrl = 'http://localhost:3000/api/people';

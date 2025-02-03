@@ -76,7 +76,7 @@ class EventProvider with ChangeNotifier {
         notifyListeners();
       } catch (e) {
         print('Error joining event: $e');
-        throw e;
+        rethrow;
       }
     } else {
       print('Person ID or token is null');
@@ -107,7 +107,7 @@ class EventProvider with ChangeNotifier {
         notifyListeners();
       } catch (e) {
         print('Error leaving event: $e');
-        throw e;
+        rethrow;
       }
     } else {
       print('Person ID or token is null');
@@ -149,7 +149,7 @@ class EventProvider with ChangeNotifier {
       print('Successfully left the main event.');
     } catch (e) {
       print('Error leaving main event and subevents: $e');
-      throw e;
+      rethrow;
     }
   } else {
     print('Person ID or token is null');
@@ -217,7 +217,7 @@ class EventProvider with ChangeNotifier {
         notifyListeners();
       } catch (e) {
         print('Error fetching subscribed event IDs: $e');
-        throw e;
+        rethrow;
       }
     }
   }

@@ -12,6 +12,8 @@ import '../services/api_service.dart';
 import '../utils/card_builder.dart'; // Import the CardBuilder
 
 class CalendarScreen extends StatefulWidget {
+  const CalendarScreen({super.key});
+
   @override
   _CalendarScreenState createState() => _CalendarScreenState();
 }
@@ -137,10 +139,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Calendar'),
+        title: const Text('Calendar'),
       ),
       body: _isLoading
-          ? Center(
+          ? const Center(
               child: CircularProgressIndicator(),
             ) :  Column(
         children: [
@@ -164,10 +166,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 _calendarFormat = format;
               });
             },
-            headerStyle: HeaderStyle(
+            headerStyle: const HeaderStyle(
               formatButtonVisible: false,
             ),
-            calendarStyle: CalendarStyle(
+            calendarStyle: const CalendarStyle(
               todayDecoration: BoxDecoration(
                 color: Colors.blueAccent,
                 shape: BoxShape.circle,
@@ -179,7 +181,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
             calendarBuilders: CalendarBuilders<EventModel>(
               markerBuilder: (context, date, events) {
-                if (events.isEmpty) return SizedBox();
+                if (events.isEmpty) return const SizedBox();
 
                 // Get the EventProvider so we can check subscription status.
                 final eventProvider = Provider.of<EventProvider>(context, listen: false);
@@ -214,7 +216,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           const SizedBox(height: 8.0),
           Expanded(
             child: _getEventsForDay(_selectedDay).isEmpty
-    ? Center(child: Text('No events for this day'))
+    ? const Center(child: Text('No events for this day'))
     : ListView.builder(
         itemCount: _getEventsForDay(_selectedDay).length,
         itemBuilder: (context, index) {
@@ -276,7 +278,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         ],
       ),
-      drawer: DefaultDrawer(),
+      drawer: const DefaultDrawer(),
     );
     
   }

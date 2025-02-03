@@ -17,6 +17,8 @@ import '../services/api_service.dart';
 import '../utils/card_builder.dart';
 
 class EventsScreen extends StatefulWidget {
+  const EventsScreen({super.key});
+
   @override
   _EventsScreenState createState() => _EventsScreenState();
 }
@@ -32,7 +34,7 @@ class _EventsScreenState extends State<EventsScreen> {
   List<bool> _visibleList = [];
 
   // Controller for search field
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -126,7 +128,7 @@ class _EventsScreenState extends State<EventsScreen> {
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredEvents = _allEvents.where((event) {
-        final name = event.name?.toLowerCase() ?? '';
+        final name = event.name.toLowerCase() ?? '';
         return name.contains(query);
       }).toList();
     });
@@ -210,16 +212,16 @@ class _EventsScreenState extends State<EventsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Events'),
+        title: const Text('Events'),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh),
             onPressed: () {
               _loadEventsAndFilter();
             },
           ),
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: () {
               eventProvider.reset(); // Clear event data
               authProvider.logout();
@@ -232,17 +234,17 @@ class _EventsScreenState extends State<EventsScreen> {
         ],
       ),
       body: _isLoading
-          ? Center(
+          ? const Center(
               child: CircularProgressIndicator(),
             )
           : Column(
               children: [
                 // Search field on top
                 Padding(
-                  padding: EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(8.0),
                   child: TextField(
                     controller: _searchController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Search by event name',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.search),
@@ -251,7 +253,7 @@ class _EventsScreenState extends State<EventsScreen> {
                 ),
                 Expanded(
                   child: _filteredEvents.isEmpty
-                      ? Center(
+                      ? const Center(
                           child: Text(
                             'There are no events for you right now. Check back later',
                             style: TextStyle(fontSize: 16),
@@ -259,7 +261,7 @@ class _EventsScreenState extends State<EventsScreen> {
                           ),
                         )
                       : ListView.builder(
-                          padding: EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(10),
                           itemCount: _filteredEvents.length,
                           itemBuilder: (context, index) {
                             final event = _filteredEvents[index];
@@ -319,7 +321,7 @@ class _EventsScreenState extends State<EventsScreen> {
                 ),
               ],
             ),
-      drawer: DefaultDrawer(),
+      drawer: const DefaultDrawer(),
     );
   }
 
@@ -344,7 +346,7 @@ class _EventsScreenState extends State<EventsScreen> {
         borderRadius: BorderRadius.circular(10),
       ),
       elevation: 4,
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 5),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 5),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.deepPurpleAccent,
@@ -360,7 +362,7 @@ class _EventsScreenState extends State<EventsScreen> {
               : null,
         ),
         child: Container(
-          padding: EdgeInsets.all(15),
+          padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               color: Colors.black.withOpacity(0.65)),
@@ -380,13 +382,13 @@ class _EventsScreenState extends State<EventsScreen> {
                       children: [
                         Text(
                           name,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.white, // Text color over image
                           ),
                         ),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         // Main Event Details
                         _buildEventDetailRow(Icons.category, type),
                         _buildEventDetailRow(
@@ -470,7 +472,7 @@ class _EventsScreenState extends State<EventsScreen> {
                             ),
                           ),
                         ),
-                        Padding(padding: EdgeInsets.symmetric(vertical: 2)),
+                        const Padding(padding: EdgeInsets.symmetric(vertical: 2)),
                         Align(
                           alignment: Alignment.centerLeft,
                           child: ElevatedButton(
@@ -487,7 +489,7 @@ class _EventsScreenState extends State<EventsScreen> {
                                 ),
                               );
                             },
-                            child: Icon(
+                            child: const Icon(
                               Icons.book,
                               color: Colors.white,
                             ),
@@ -500,13 +502,13 @@ class _EventsScreenState extends State<EventsScreen> {
               ),
               // Right Column: Subevents
               if (subEvents.isNotEmpty) ...[
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Expanded(
                   flex: 1,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Subevents',
                         style: TextStyle(
                           fontSize: 18,
@@ -514,7 +516,7 @@ class _EventsScreenState extends State<EventsScreen> {
                           color: Colors.white, // Text color over image
                         ),
                       ),
-                      SizedBox(height: 5),
+                      const SizedBox(height: 5),
                       Container(
                         height: 200, // Adjust as needed
                         decoration: BoxDecoration(
@@ -544,7 +546,7 @@ class _EventsScreenState extends State<EventsScreen> {
                             return ExpansionTile(
                               title: Text(
                                 subName,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white, // Text color over image
@@ -552,7 +554,7 @@ class _EventsScreenState extends State<EventsScreen> {
                               ),
                               children: [
                                 Padding(
-                                  padding: EdgeInsets.symmetric(
+                                  padding: const EdgeInsets.symmetric(
                                       vertical: 5, horizontal: 10),
                                   child: Column(
                                     crossAxisAlignment:
@@ -667,7 +669,7 @@ class _EventsScreenState extends State<EventsScreen> {
                                                   ),
                                                 );
                                               },
-                                              child: Icon(
+                                              child: const Icon(
                                                 Icons.book,
                                                 color: Colors.white,
                                               ),
@@ -707,15 +709,15 @@ class _EventsScreenState extends State<EventsScreen> {
 
   Widget _buildEventDetailRow(IconData icon, String text) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
       child: Row(
         children: [
           Icon(icon, size: 16),
-          SizedBox(width: 5),
+          const SizedBox(width: 5),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 14),
             ),
           ),
         ],

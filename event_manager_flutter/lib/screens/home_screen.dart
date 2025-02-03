@@ -3,16 +3,18 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 
 class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final authProvider = context.read<AuthProvider>();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Event Manager'),
+        title: const Text('Event Manager'),
         actions: [
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: () {
               authProvider.logout();
               Navigator.pushReplacementNamed(context, '/');
@@ -20,39 +22,39 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Center(
+      body: const Center(
         child: Text('Welcome to Event Manager'),
       ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
-              child: Text('Event Manager - Menu'),
+            const DrawerHeader(
               decoration: BoxDecoration(
                 color: Colors.blue,
               ),
+              child: Text('Event Manager - Menu'),
             ),
             ListTile(
-              title: Text('Events'),
+              title: const Text('Events'),
               onTap: () {
                 Navigator.pushNamed(context, '/events');
               },
             ),
             ListTile(
-              title: Text('People'),
+              title: const Text('People'),
               onTap: () {
                 Navigator.pushNamed(context, '/people');
               },
             ),
             ListTile(
-              title: Text('Calendar'),
+              title: const Text('Calendar'),
               onTap: () {
                 Navigator.pushNamed(context, '/calendar');
               },
             ),
             ListTile(
-              title: Text('Log out'),
+              title: const Text('Log out'),
               onTap: () {
                 authProvider.logout();
                 Navigator.pushReplacementNamed(context, '/');

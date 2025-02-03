@@ -32,7 +32,7 @@ class CardBuilder {
         borderRadius: BorderRadius.circular(10),
       ),
       elevation: 4,
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 5),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 5),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.deepPurpleAccent,
@@ -48,7 +48,7 @@ class CardBuilder {
               : null,
         ),
         child: Container(
-          padding: EdgeInsets.all(15),
+          padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               color: Colors.black.withOpacity(0.65)),
@@ -68,13 +68,13 @@ class CardBuilder {
                       children: [
                         Text(
                           name,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.white, // Text color over image
                           ),
                         ),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         // Main Event Details
                         _buildEventDetailRow(Icons.category, type),
                         _buildEventDetailRow(
@@ -147,7 +147,7 @@ class CardBuilder {
                             color: Colors.white,
                           ),
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         // Details Button
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
@@ -163,7 +163,7 @@ class CardBuilder {
                               ),
                             );
                           },
-                          child: Icon(
+                          child: const Icon(
                             Icons.book,
                             color: Colors.white,
                           ),
@@ -175,13 +175,13 @@ class CardBuilder {
               ),
               // Right Column: Subevents
               if (subEvents.isNotEmpty) ...[
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Expanded(
                   flex: 1,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Subevents',
                         style: TextStyle(
                           fontSize: 18,
@@ -189,7 +189,7 @@ class CardBuilder {
                           color: Colors.white, // Text color over image
                         ),
                       ),
-                      SizedBox(height: 5),
+                      const SizedBox(height: 5),
                       Container(
                         height: 200, // Adjust as needed
                         decoration: BoxDecoration(
@@ -219,7 +219,7 @@ class CardBuilder {
                             return ExpansionTile(
                               title: Text(
                                 subName,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white, // Text color over image
@@ -227,7 +227,7 @@ class CardBuilder {
                               ),
                               children: [
                                 Padding(
-                                  padding: EdgeInsets.symmetric(
+                                  padding: const EdgeInsets.symmetric(
                                       vertical: 5, horizontal: 10),
                                   child: Column(
                                     crossAxisAlignment:
@@ -313,7 +313,7 @@ class CardBuilder {
                                               color: Colors.white,
                                             ),
                                           ),
-                                          SizedBox(width: 10),
+                                          const SizedBox(width: 10),
                                           ElevatedButton(
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor: Colors.green,
@@ -330,7 +330,7 @@ class CardBuilder {
                                                 ),
                                               );
                                             },
-                                            child: Icon(
+                                            child: const Icon(
                                               Icons.book,
                                               color: Colors.white,
                                             ),
@@ -379,7 +379,7 @@ class CardBuilder {
         borderRadius: BorderRadius.circular(10),
       ),
       elevation: 4,
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 5),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 5),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.deepPurpleAccent,
@@ -395,7 +395,7 @@ class CardBuilder {
               : null,
         ),
         child: Container(
-          padding: EdgeInsets.all(15),
+          padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               color: Colors.black.withOpacity(0.65)),
@@ -415,13 +415,13 @@ class CardBuilder {
                       children: [
                         Text(
                           name,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.white, // Text color over image
                           ),
                         ),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         // Main Event Details
                         _buildEventDetailRow(Icons.category, type),
                         _buildEventDetailRow(
@@ -510,7 +510,7 @@ class CardBuilder {
                               ),
                             );
                           },
-                          child: Icon(
+                          child: const Icon(
                             Icons.book,
                             color: Colors.white,
                           ),
@@ -522,13 +522,13 @@ class CardBuilder {
               ),
               // Right Column: Subevents
               if (subEvents.isNotEmpty) ...[
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Expanded(
                   flex: 1,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Subevents',
                         style: TextStyle(
                           fontSize: 18,
@@ -536,7 +536,7 @@ class CardBuilder {
                           color: Colors.white, // Text color over image
                         ),
                       ),
-                      SizedBox(height: 5),
+                      const SizedBox(height: 5),
                       Container(
                         height: 200, // Adjust as needed
                         decoration: BoxDecoration(
@@ -566,7 +566,7 @@ class CardBuilder {
                             return ExpansionTile(
                               title: Text(
                                 subName,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white, // Text color over image
@@ -574,7 +574,7 @@ class CardBuilder {
                               ),
                               children: [
                                 Padding(
-                                  padding: EdgeInsets.symmetric(
+                                  padding: const EdgeInsets.symmetric(
                                       vertical: 5, horizontal: 10),
                                   child: Column(
                                     crossAxisAlignment:
@@ -677,7 +677,7 @@ class CardBuilder {
                                                 ),
                                               );
                                             },
-                                            child: Icon(
+                                            child: const Icon(
                                               Icons.book,
                                               color: Colors.white,
                                             ),
@@ -717,15 +717,15 @@ class CardBuilder {
   /// Builds the event detail row with an icon and text
   static Widget _buildEventDetailRow(IconData icon, String text) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
       child: Row(
         children: [
           Icon(icon, size: 16, color: Colors.white),
-          SizedBox(width: 5),
+          const SizedBox(width: 5),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 14, color: Colors.white),
+              style: const TextStyle(fontSize: 14, color: Colors.white),
             ),
           ),
         ],

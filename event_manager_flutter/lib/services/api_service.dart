@@ -1,9 +1,7 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'package:http/http.dart' as http;
 import '../models/person_model.dart'; // Ensure this model exists
 import '../models/event_model.dart';
-import '../models/user_model.dart';
 import '../models/login_response.dart';
 
 class ApiService {

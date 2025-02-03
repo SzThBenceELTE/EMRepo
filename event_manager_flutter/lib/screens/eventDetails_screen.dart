@@ -10,8 +10,7 @@ class EventDetailsScreen extends StatefulWidget {
   final EventModel event;
   final String token; // pass in the auth token if needed
 
-  const EventDetailsScreen({Key? key, required this.event, required this.token})
-      : super(key: key);
+  const EventDetailsScreen({super.key, required this.event, required this.token});
 
   @override
   _EventDetailsScreenState createState() => _EventDetailsScreenState();
@@ -57,7 +56,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         title: Text(widget.event.name ?? 'Event Details'),
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
               ? Center(child: Text(_errorMessage!))
               : SingleChildScrollView(
@@ -69,21 +68,21 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         // Display your event details (image, dates, etc.)
                         Text(
                           widget.event.name ?? 'No Name',
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 24, fontWeight: FontWeight.bold),
                         ),
                         Text(
                           widget.event.type ?? 'No Type',
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 16),
                         ),
                         Text(
                           'Start Date: ${_dateFormater(widget.event.startDate)}',
-                          style: TextStyle(fontSize: 16),
+                          style: const TextStyle(fontSize: 16),
                         ),
                         Text(
                           'End Date: ${_dateFormater(widget.event.endDate)}',
-                          style: TextStyle(fontSize: 16),
+                          style: const TextStyle(fontSize: 16),
                         ),
                         
                         const Divider(height: 32),
@@ -99,7 +98,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             ? const Text('No subscriptions yet.')
                             : ListView.separated(
                                 shrinkWrap: true,
-                                physics: NeverScrollableScrollPhysics(),
+                                physics: const NeverScrollableScrollPhysics(),
                                 itemCount: subscribedUsers.length,
                                 separatorBuilder: (context, index) =>
                                     const Divider(),
@@ -112,7 +111,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                       child: Text(
                                         user.firstName.substring(0, 1),
                                         style:
-                                            TextStyle(color: Colors.white),
+                                            const TextStyle(color: Colors.white),
                                       ),
                                     ),
                                     title: Text(

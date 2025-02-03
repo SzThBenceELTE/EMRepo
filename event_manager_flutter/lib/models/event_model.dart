@@ -1,6 +1,5 @@
 // lib/models/event.model.dart
 
-import 'dart:io';
 
 class EventModel {
   final int id;

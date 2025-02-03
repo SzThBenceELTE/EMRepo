@@ -19,7 +19,7 @@ class PersonProvider with ChangeNotifier {
       final userId = authProvider.currentUser!.id;
       final token = authProvider.token;
 
-      if (userId != null && token != null) {
+      if (token != null) {
         _currentPerson = await _apiService.fetchPersonByUserId(userId, token);
         notifyListeners();
       } else {

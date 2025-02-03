@@ -4,6 +4,8 @@ import '../providers/auth_provider.dart';
 import '../providers/person_provider.dart';
 
 class PeopleScreen extends StatefulWidget {
+  const PeopleScreen({super.key});
+
   @override
   _PeopleScreenState createState() => _PeopleScreenState();
 }
@@ -31,10 +33,10 @@ class _PeopleScreenState extends State<PeopleScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('People'),
+        title: const Text('People'),
       ),
       body: personProvider.events.isEmpty
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
               itemCount: personProvider.events.length,
               itemBuilder: (context, index) {
@@ -45,18 +47,18 @@ class _PeopleScreenState extends State<PeopleScreen> {
                 final role = event['role'] ?? 'Unknown Role';
                 final group = event['group'] ?? 'No Group';
                  return Card(
-                  margin: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   elevation: 3,
                   child: Padding(
-                    padding: EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           '$firstName $surname',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
-                        SizedBox(height: 6),
+                        const SizedBox(height: 6),
                         Text('Role: $role'),
                         Text('Group: $group'),
                       ],

@@ -45,7 +45,7 @@ class AuthProvider with ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      throw e;
+      rethrow;
     }
   }
 

@@ -8,7 +8,7 @@ import '../providers/auth_provider.dart';
 import '../providers/person_provider.dart';
 
 class DefaultDrawer extends StatelessWidget {
-  const DefaultDrawer({Key? key}) : super(key: key);
+  const DefaultDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +27,7 @@ class DefaultDrawer extends StatelessWidget {
               Navigator.pushNamed(context, '/profile');
             },
             child: DrawerHeader(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.blue,
               ),
               child: Column(
@@ -36,17 +36,17 @@ class DefaultDrawer extends StatelessWidget {
                   // Welcome message at the top
                   Text(
                     'Welcome, ${currentPerson?.firstName ?? ''} ${currentPerson?.surname ?? ''}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Spacer(),
+                  const Spacer(),
                   // Role and Group at the bottom
                   Text(
                     'Role: ${currentPerson?.role.toString().split('.').last ?? ''}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
                     ),
@@ -55,7 +55,7 @@ class DefaultDrawer extends StatelessWidget {
                       currentPerson?.group != null)
                     Text(
                       'Group: ${currentPerson?.group.toString().split('.').last}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 16,
                       ),
@@ -65,25 +65,25 @@ class DefaultDrawer extends StatelessWidget {
             ),
           ),
           ListTile(
-            title: Text('Events'),
+            title: const Text('Events'),
             onTap: () {
               Navigator.pushNamed(context, '/events');
             },
           ),
           ListTile(
-            title: Text('People'),
+            title: const Text('People'),
             onTap: () {
               Navigator.pushNamed(context, '/people');
             },
           ),
           ListTile(
-            title: Text('Calendar'),
+            title: const Text('Calendar'),
             onTap: () {
               Navigator.pushNamed(context, '/calendar');
             },
           ),
           ListTile(
-            title: Text('Log out'),
+            title: const Text('Log out'),
             onTap: () {
               authProvider.logout();
               Navigator.pushReplacementNamed(context, '/');

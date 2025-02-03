@@ -6,6 +6,8 @@ import '../providers/auth_provider.dart';
 import '../models/person_model.dart';
 
 class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
 }
@@ -97,10 +99,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Register'),
+        title: const Text('Register'),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -109,14 +111,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Username Field
                 TextFormField(
                   controller: _usernameController,
-                  decoration: InputDecoration(labelText: 'Username'),
+                  decoration: const InputDecoration(labelText: 'Username'),
                   validator: (value) =>
                       value!.isEmpty ? 'Please enter a username' : null,
                 ),
                 // Email Field
                 TextFormField(
                   controller: _emailController,
-                  decoration: InputDecoration(labelText: 'Email'),
+                  decoration: const InputDecoration(labelText: 'Email'),
                   validator: (value) {
                     if (value!.isEmpty) return 'Please enter an email';
                     final emailRegex = RegExp(
@@ -128,7 +130,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Password Field
                 TextFormField(
                   controller: _passwordController,
-                  decoration: InputDecoration(labelText: 'Password'),
+                  decoration: const InputDecoration(labelText: 'Password'),
                   obscureText: true,
                   validator: (value) => value!.length < 6
                       ? 'Password must be at least 6 characters'
@@ -137,23 +139,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // First Name Field
                 TextFormField(
                   controller: _firstNameController,
-                  decoration: InputDecoration(labelText: 'First Name'),
+                  decoration: const InputDecoration(labelText: 'First Name'),
                   validator: (value) =>
                       value!.isEmpty ? 'Please enter your first name' : null,
                 ),
                 // Surname Field
                 TextFormField(
                   controller: _surnameController,
-                  decoration: InputDecoration(labelText: 'Surname'),
+                  decoration: const InputDecoration(labelText: 'Surname'),
                   validator: (value) =>
                       value!.isEmpty ? 'Please enter your surname' : null,
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 // Role Dropdown
                 DropdownButtonFormField<RoleTypeEnum>(
                   value: _selectedRole,
                   items: _roleDropdownItems,
-                  decoration: InputDecoration(labelText: 'Role'),
+                  decoration: const InputDecoration(labelText: 'Role'),
                   onChanged: (value) {
                     setState(() {
                       _selectedRole = value;
@@ -162,33 +164,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: (value) =>
                       value == null ? 'Please select a role' : null,
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 // Group Dropdown (Optional)
                 DropdownButtonFormField<GroupTypeEnum>(
                   value: _selectedGroup,
                   items: _groupDropdownItems,
-                  decoration: InputDecoration(labelText: 'Group (Optional)'),
+                  decoration: const InputDecoration(labelText: 'Group (Optional)'),
                   onChanged: (value) {
                     setState(() {
                       _selectedGroup = value;
                     });
                   },
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 // Error Message
                 if (_errorMessage != null)
                   Text(
                     _errorMessage!,
-                    style: TextStyle(color: Colors.red),
+                    style: const TextStyle(color: Colors.red),
                   ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 // Register Button
                 ElevatedButton(
                   onPressed: _isLoading ? null : _register,
                   child:
-                      _isLoading ? CircularProgressIndicator() : Text('Register'),
+                      _isLoading ? const CircularProgressIndicator() : const Text('Register'),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 // Login Button
                 TextButton(
                   onPressed: _isLoading
@@ -196,7 +198,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       : () {
                           Navigator.pushReplacementNamed(context, '/login');
                         },
-                  child: Text('Already have an account? Login'),
+                  child: const Text('Already have an account? Login'),
                 ),
               ],
             ),

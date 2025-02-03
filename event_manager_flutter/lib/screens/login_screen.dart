@@ -5,6 +5,8 @@ import 'package:video_player/video_player.dart';
 import '../providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -64,11 +66,11 @@ Widget build(BuildContext context) {
         ),
         Center(
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
+                const Text(
                   'Event Manager',
                   style: TextStyle(
                     fontSize: 24,
@@ -76,23 +78,23 @@ Widget build(BuildContext context) {
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 // Username Field
                 TextField(
                   controller: _usernameController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Username',
                     labelStyle: TextStyle(color: Colors.white),
                     enabledBorder: UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.white),
                     ),
                   ),
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white),
                 ),
                 // Password Field
                 TextField(
                   controller: _passwordController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Password',
                     labelStyle: TextStyle(color: Colors.white),
                     enabledBorder: UnderlineInputBorder(
@@ -100,19 +102,19 @@ Widget build(BuildContext context) {
                     ),
                   ),
                   obscureText: true,
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 // Error Message
                 if (_errorMessage != null)
                   Text(
                     _errorMessage!,
-                    style: TextStyle(color: Colors.red),
+                    style: const TextStyle(color: Colors.red),
                   ),
                 // Login Button
                 ElevatedButton(
                   onPressed: _isLoading ? null : _login,
-                  child: _isLoading ? CircularProgressIndicator() : Text('Login'),
+                  child: _isLoading ? const CircularProgressIndicator() : const Text('Login'),
                 ),
                 // Register Button
                 // TextButton(

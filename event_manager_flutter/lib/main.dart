@@ -31,6 +31,8 @@ void main() async {
 }
 
 class EventManagerApp extends StatelessWidget {
+  const EventManagerApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     // Initialize AuthProvider by loading persisted user data
@@ -77,7 +79,7 @@ class EventManagerApp extends StatelessWidget {
         '/events': (context) => EventsScreen(),
         '/people': (context) => PeopleScreen(),
         '/calendar': (context) => CalendarScreen(),
-        '/profile': (context) => ProfileScreen(),
+        '/profile': (context) => const ProfileScreen(),
         // '/register' : (context) => RegisterScreen(),
         // Add other routes
       },
