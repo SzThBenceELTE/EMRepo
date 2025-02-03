@@ -1,0 +1,16 @@
+<div class="mt-3">
+    <form class="container" [formGroup]="loginForm" (ngSubmit)="onLogin()">
+        <div class="mb-3">
+            <label for="username">Username:</label>
+            <input type="username" formControlName="username" class="form-control" id="username" required>
+        </div>
+        <div class="mb-3">
+            <label for="password">Password:</label>
+            <input type="password" formControlName="password" class="form-control" id="password" required>
+        </div>
+        <div *ngFor="let error of errors">
+            <p class="text-danger text-center"> {{ error }}! </p>
+          </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+    </form>
+</div>

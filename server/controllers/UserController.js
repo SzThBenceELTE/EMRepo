@@ -11,7 +11,7 @@ const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_here';
 exports.getUsers = async (req, res) => {
     try {
         const users = await User.getAll();
-        console.log(users);
+        //console.log(users);
         res.status(200).json(users);
     } catch (error) {
         console.error(error);
@@ -50,7 +50,7 @@ exports.createUser = async (req, res) => {
         email,
         password: hashedPassword,
       });
-      console.log('newUser:', newUser);
+      //console.log('newUser:', newUser);
   
       // Create the person and link to the user
       
@@ -116,6 +116,7 @@ exports.getUserByEmail = async (req, res) => {
     }
 };
 
+
 exports.updateUser = async (req, res) => {
     const { id } = req.params;
     const { name, email } = req.body;
@@ -158,7 +159,7 @@ exports.loginUser = async (req, res) => {
       include: [{ model: Person }], // Include the associated Person
     });
 
-    console.log('user:', user);
+    //console.log('user:', user);
 
     if (!user || !user.Person) {
       return res.status(400).json({ message: 'Invalid credentials' });
@@ -196,20 +197,20 @@ exports.loginUser = async (req, res) => {
   exports.getCurrentUser = async (req, res) => {
     try {
         const userId = req.user.id; 
-        console.log('userId:', userId);
+        //console.log('userId:', userId);
     
         // Await the asynchronous call to fetch the user
         const user = await User.findByPk(userId, {
           include: [{ model: Person }],  // Ensures Person is fetched along with User
         });
-        console.log('user:', user);
+        //console.log('user:', user);
         if (!user) {
           return res.status(404).json({ message: 'User not found' });
         }
     
         // Access the associated Person using Sequelize associations
         const person = user.Person; // Using the generated accessor method
-        console.log('person:', person);
+        //console.log('person:', person);
         if (!person) {
           return res.status(404).json({ message: 'Person not found' });
         }
@@ -255,12 +256,12 @@ exports.loginUser = async (req, res) => {
 
   exports.getPersonByUser = async (req, res) => {
     const { userId } = req.params;
-    console.log('userId:', userId);
+    //console.log('userId:', userId);
     try {
         const user = await User.findByPk(userId, {
             include: [Person],
         });
-        console.log('user:', user);
+        //console.log('user:', user);
         if (user && user.Person) {
             res.status(200).json(user.Person);
         } else {

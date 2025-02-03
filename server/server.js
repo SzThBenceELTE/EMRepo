@@ -13,6 +13,7 @@ const userRoutes = require('./routes/UserRoutes'); // API routes for users
 const personRoutes = require('./routes/PersonRoutes'); // API routes for people
 const eventRoutes = require('./routes/EventRoutes'); // API routes for events
 const homeRoutes = require('./routes/HomeRoutes'); // API routes for events
+const teamRoutes = require('./routes/TeamRoutes'); // API routes for teams
 
 const db = require('./db');
 
@@ -65,6 +66,7 @@ app.use('/api', userRoutes);
 app.use('/api', personRoutes);
 app.use('/api', eventRoutes);
 app.use('/api', homeRoutes);
+app.use('/api', teamRoutes);
 
 
 // Middleware to serve static Angular files

@@ -11,6 +11,7 @@ const path = require('path');
 const Person = require('./models/PersonModel');
 const User = require('./models/UserModel');
 const Event = require('./models/EventModel');
+const Team = require('./models/TeamModel');
 const EventParticipants = require('./models/EventParticipants');
 const Group = require('./models/GroupModel'); 
 
@@ -159,5 +160,6 @@ module.exports = {
   Person,
   User,
   Event,
+  Team,
   EventParticipants,
 };

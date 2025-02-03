@@ -1,0 +1,129 @@
+<div class="row">
+   <app-filter class="col-3" (filterChanged)="onFilterChange($event)" [filterByName]="'users'"></app-filter>
+   <div class="col-6"></div>
+   <div class="col-3 text-end">
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTeamModal">
+         Create New Team
+      </button>
+   </div>
+</div>
+
+<ul *ngIf="filteredTeams.length; else noTeams" class="list-group mt-2">
+   @for(team of filteredTeams; track team.id){
+   <button class="dropdown-button btn btn-primary list-group-item mt-2 d-flex justify-content-between" type="button"
+      data-bs-toggle="collapse" [attr.data-bs-target]="'#teams' + team.id" aria-expanded="false"
+      [attr.aria-controls]="'teams' + team.id">
+      <strong>{{ team.name }}</strong>
+      <span class="badge" [ngClass]="{
+           'text-bg-secondary': team.users.length === 0, 
+           'text-bg-primary': team.users.length > 0
+           }">
+         {{team.users.length}}
+      </span>
+   </button>
+   <div class="collapse" [id]="'teams' + team.id">
+      <ul class="list-group dropdown-list">
+         <li class="list-group-item d-flex justify-content-between border-0 sticky-top">
+            <button data-bs-toggle="modal" data-bs-target="#userSelectModal" class="btn btn-success"
+               (click)="setSelectedTeam(team.id)">
+               Add User
+            </button>
+            <button class="btn btn-danger" (click)="deleteTeam(team.id)" data-bs-toggle="modal"
+               data-bs-target="#confirmationModal">
+               Delete Team
+            </button>
+         </li>
+         @for (user of team.users; track user.id){
+         <li class="list-group-item d-flex justify-content-between border-0">
+            {{user.first_name}} {{user.last_name}}
+            <button (click)="removeUserFromTeam(team.id, user.id)"
+               class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmationModal">
+               <i class="bi bi-trash"></i>
+            </button>
+
+         </li>
+         }
+      </ul>
+   </div>
+   }
+</ul>
+<ng-template #noTeams>
+   <div class="mt-3">
+      <p>No Teams available.</p>
+   </div>
+</ng-template>
+
+
+<div class="modal fade" id="createTeamModal" tabindex="-1" aria-labelledby="createTeamModalLabel" aria-hidden="true">
+   <div class="modal-dialog">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h5 class="modal-title" id="createTeamModalLabel">Create New Team</h5>
+            <button id="closeModalButton" type="button" class="btn-close" data-bs-dismiss="modal"
+               aria-label="Close"></button>
+         </div>
+         <div class="modal-body">
+            <form [formGroup]="teamForm" (ngSubmit)="createTeam()">
+               <div class="mb-3">
+                  <input type="text" formControlName="name" class="form-control" placeholder="Enter team name" required>
+               </div>
+               <div *ngFor="let error of errors">
+                  <p class="text-danger text-center"> {{ error }}! </p>
+               </div>
+               <div class="text-center">
+                  <button type="submit" class="btn btn-primary">Create New Team</button>
+               </div>
+            </form>
+         </div>
+      </div>
+   </div>
+</div>
+
+<div class="modal fade" id="userSelectModal" tabindex="-1" aria-labelledby="userSelectModalLabel" aria-hidden="true">
+   <div class="modal-dialog">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h5 class="modal-title" id="userSelectModalLabel">Select User</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+
+            </button>
+         </div>
+         <form [formGroup]="selectUsersForm" (ngSubmit)="addUsersToTeam()">
+            <div class="modal-body">
+               <ng-container *ngIf="usersWithoutTeam.length > 0; else noUsersTemplate">
+
+                  <ng-multiselect-dropdown class="w-100 form-control" formControlName="users" [placeholder]="'Users'"
+                     [settings]="dropdownSettings" [data]="usersWithoutTeam">
+                  </ng-multiselect-dropdown>
+
+               </ng-container>
+               <ng-template #noUsersTemplate>
+                  <p>No users available to select.</p>
+               </ng-template>
+            </div>
+            <div class="modal-footer">
+               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+               <button type="submit" class="btn btn-primary" data-bs-dismiss="modal"
+                  [disabled]="usersWithoutTeam.length === 0">Select</button>
+            </div>
+         </form>
+      </div>
+   </div>
+</div>
+
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel"
+   aria-hidden="true">
+   <div class="modal-dialog">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h5 class="modal-title" id="confirmationModalLabel">Are you sure you want to {{confirmationMessage}}?</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+         </div>
+         <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirmAction" data-bs-dismiss="modal"
+               (click)="actionAfterConfirmation()">Confirm</button>
+         </div>
+      </div>
+   </div>
+</div>

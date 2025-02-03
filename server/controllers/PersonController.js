@@ -14,6 +14,43 @@ exports.getPersons = async (req, res) => {
     }
 };
 
+exports.getPersonsFromGroup = async (req, res) => {
+    const { group } = req.params;
+    try {
+        let persons = await Person.getAll()
+        persons = persons.filter(person => person.role === 'DEVELOPER' && person.group === group.toUpperCase());
+        console.log(persons);
+        res.status(200).json(persons);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error retrieving persons' });
+    }
+};
+
+exports.getDevelopers = async (req, res) => {
+    try {
+        let persons = await Person.getAll();
+        persons = persons.filter(person => person.role === 'DEVELOPER');
+        console.log(persons);
+        res.status(200).json(persons);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error retrieving persons' });
+    }   
+};
+
+exports.getManagers = async (req, res) => {
+    try {
+        let persons = await Person.getAll();
+        persons = persons.filter(person => person.role === 'MANAGER');
+        console.log(persons);
+        res.status(200).json(persons);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error retrieving persons' });
+    }
+};
+
 exports.createPerson = async (req, res) => {
     const { firstName, surname, role, group } = req.body;
     console.log(req.body);

@@ -1,0 +1,27 @@
+<nav class="py-2 d-flex justify-content-between" style="background-color: #221C3A;">
+  <div class="d-flex gap-3">
+    <ng-container *ngIf="authService.isLoggedIn">
+      <a class="nav-link text-white fs-4" routerLink="users" routerLinkActive="active-link"
+        [routerLinkActiveOptions]="{exact: true}"><b>Users</b></a>
+      <a class="nav-link text-white fs-4" routerLink="teams" routerLinkActive="active-link"
+        [routerLinkActiveOptions]="{exact: true}"><b>Teams</b></a>
+      <a class="nav-link text-white fs-4" routerLink="events" routerLinkActive="active-link"
+        [routerLinkActiveOptions]="{exact: true}"><b>Events</b></a>
+    </ng-container>
+    <ng-container *ngIf="!authService.isLoggedIn">
+      <a class="nav-link text-white fs-4" routerLink="login"><b>Login</b></a>
+      <a class="nav-link text-white fs-4" routerLink="register"><b>Register</b></a>
+    </ng-container>
+  </div>
+
+  <div class="d-flex gap-5">
+    <ng-container *ngIf="authService.isLoggedIn">
+      <span class="nav-link text-white fs-4 no-hover"><b>{{ authService.username }}</b></span>
+      <a class="nav-link text-white fs-4" (click)="authService.logout()"><b>Logout</b></a>
+    </ng-container>
+  </div>
+</nav>
+
+<div class="container my-4">
+  <router-outlet></router-outlet>
+</div>

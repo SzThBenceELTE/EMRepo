@@ -1,0 +1,11 @@
+.table th {
+  border-bottom: 1px solid;
+}
+
+thead{
+  font-weight: bold;
+}
+
+tr td:first-child {
+  font-weight: bolder;
+}

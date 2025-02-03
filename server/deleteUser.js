@@ -19,6 +19,6 @@ async function deleteUser(userId) {
   }
 }
 
-const userIdToDelete = 5;
+const userIdToDelete = 13;
 
 deleteUser(userIdToDelete);

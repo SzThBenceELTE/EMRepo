@@ -3,6 +3,11 @@ const sequelize = require('../sequelize'); // Import from sequelize.js
 const EventEnum = require('../enums/EventEnum');
 const now = new Date();
 
+/*
+  Need to add a team function, one app uses groups, the other teams, so they should'n interfere with eachother
+    use groups as a template, but with dynamic elements here (teams are made and deleted)
+*/
+
 const Event = sequelize.define(
   'Event',
   {
@@ -40,6 +45,18 @@ const Event = sequelize.define(
       },
     },
     groups: {
+      type: DataTypes.TEXT, // Use TEXT to store JSON string
+      allowNull: false,
+      defaultValue: '[]', // Empty JSON array as a string
+      get() {
+        const rawValue = this.getDataValue('groups');
+        return JSON.parse(rawValue);
+      },
+      set(value) {
+        this.setDataValue('groups', JSON.stringify(value));
+      },
+    },
+    teams: {
       type: DataTypes.TEXT, // Use TEXT to store JSON string
       allowNull: false,
       defaultValue: '[]', // Empty JSON array as a string
@@ -173,7 +190,46 @@ Event.createEvent = async (name, type, startDate, endDate, maxParticipants, imag
       maxParticipants,
       imagePath: imagePath || null,
       parentId: parentId || null,
+      groups: groups, // Assign groups directly
+    });
+    return event;
+  } catch (error) {
+    console.error('Create Event Error:', error);
+    throw error;
+  }
+};
+
+Event.createEventAlternative = async (name, type, startDate, endDate, maxParticipants, imagePath, parentId, teams) => {
+  try {
+    const event = await Event.create({
+      name,
+      type,
+      startDate,
+      endDate,
+      maxParticipants,
+      imagePath: imagePath || null,
+      parentId: parentId || null,
+      teams: teams, // Assign groups directly
+    });
+    return event;
+  } catch (error) {
+    console.error('Create Event Error:', error);
+    throw error;
+  }
+};
+
+Event.createEventFull = async (name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams) => {
+  try {
+    const event = await Event.create({
+      name,
+      type,
+      startDate,
+      endDate,
+      maxParticipants,
+      imagePath: imagePath || null,
+      parentId: parentId || null,
       groups, // Assign groups directly
+      teams, // Assign groups directly
     });
     return event;
   } catch (error) {
@@ -198,6 +254,41 @@ Event.updateEvent = async (id, name, type, startDate, endDate, maxParticipants, 
     event.imagePath = imagePath;
     event.parentId = parentId;
     event.groups = groups;
+    event.teams = event.teams;  //keep it the same here
+    return await event.save();
+  }
+  return null; // Event not found
+};
+
+Event.updateEventAlternative = async (id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, teams) => {
+  const event = await Event.findByPk(id);
+  if (event) {
+    event.name = name;
+    event.type = type;
+    event.startDate = startDate;
+    event.endDate = endDate;
+    event.maxParticipants = maxParticipants;
+    event.imagePath = imagePath;
+    event.parentId = parentId;
+    event.groups = event.groups;  //keep it the same here
+    event.teams = teams;
+    return await event.save();
+  }
+  return null; // Event not found
+};
+
+Event.updateEventFull = async (id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, teams) => {
+  const event = await Event.findByPk(id);
+  if (event) {
+    event.name = name;
+    event.type = type;
+    event.startDate = startDate;
+    event.endDate = endDate;
+    event.maxParticipants = maxParticipants;
+    event.imagePath = imagePath;
+    event.parentId = parentId;
+    event.groups = groups;
+    event.teams = teams;
     return await event.save();
   }
   return null; // Event not found
