@@ -32,7 +32,7 @@ exports.getUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
     const { name, email, password, firstName, surname, role, group } = req.body;
-  
+    console.log('req.body:', req.body);
     try {
       // Check if user already exists
       let existingUser = await User.findByEmail(email);

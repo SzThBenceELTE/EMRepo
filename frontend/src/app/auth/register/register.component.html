@@ -2,19 +2,22 @@
     <form [formGroup]="userForm" (ngSubmit)="register()" class="mb-4">
         <h3>Name</h3>
         <div class="input-group mb-3">
-            <input class="form-control" formControlName="first_name" placeholder="First Name" aria-label="First Name"
+            <input class="form-control" formControlName="firstName" placeholder="First Name" aria-label="First Name"
                 required />
             <div class="m-3"></div>
-            <input class="form-control" formControlName="last_name" placeholder="Last Name" aria-label="Last Name"
+            <input class="form-control" formControlName="surname" placeholder="Last Name" aria-label="Last Name"
                 required />
         </div>
         <h3>Credentials</h3>
         <div class="input-group mb-3">
-            <input class="form-control" formControlName="username" placeholder="Username" aria-label="User Name"
+            <input class="form-control" formControlName="name" placeholder="Username" aria-label="User Name"
                 required />
             <div class="m-3"></div>
             <input class="form-control" formControlName="password" placeholder="Password" aria-label="Password" required
                 type="password" />
+            <div class="m-3"></div>
+            <input class="form-control" formControlName="email" placeholder="Email" aria-label="Email" required
+                type="email" />
         </div>
         <div class="d-flex justify-content-center">
             <button type="submit" class="btn btn-primary mt-3">Register</button>

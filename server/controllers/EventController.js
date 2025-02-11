@@ -1,5 +1,7 @@
 const Event = require('../models/EventModel');
 const EventParticipants = require('../models/EventParticipants');
+const JoiningInfos = require('../models/JoiningInfoModel');
+const People = require('../models/PersonModel');
 const {Op,Sequelize} = require('sequelize');
 const now = new Date();
 
@@ -292,9 +294,14 @@ exports.getEvents = async (req, res) => {
 };
 
 exports.createEvent = async (req, res) => {
-  const { name, type, startDate, endDate, maxParticipants, parentId } = req.body;
+  const { name, type, startDate, endDate, maxParticipants, parentId, location, description } = req.body;
   console.log("Request Body: " + JSON.stringify(req.body));
   console.log("Request File: " + JSON.stringify(req.file));
+
+
+  let loc = location ? location : null;
+  let desc = description ? description : null;
+  
  
 
   let groups = req.body.groups;
@@ -307,9 +314,23 @@ exports.createEvent = async (req, res) => {
     }
   }
 
+  let teams = req.body.teams;
+  console.log("Teams: " + teams);
+
+  if (!Array.isArray(teams)) {
+    if (teams) {
+      teams = [teams];
+    } else {
+      teams = [];
+    }
+  }
+  
+
   try {
     // If it's a subevent (parentId is provided), fetch the main event
-    if (parentId) {
+    console.log("Parent ID: " + parentId);
+    if (parentId && parentId != '' && parentId != null && parentId != undefined) {
+      console.log("Went into subevent")
       const mainEvent = await Event.findByPk(parentId);
       console.log("Main Event: " + mainEvent);
       if (!mainEvent) {
@@ -370,8 +391,13 @@ exports.createEvent = async (req, res) => {
       imagePath = req.file.path;
     }
 
+    //this needs fixing2
+    console.log("Sending: " + name + " " + type + " " + startDate + " " + endDate + " " + maxParticipants + " " + imagePath + " " + parentId + " " + groups + " " + teams + " " + loc + " " + desc);
+    const event = await Event.createEvent(name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams, loc, desc);
+
     // Proceed to create the event
-    const event = await Event.createEvent(name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups);
+    //const event = await Event.createEvent(name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams, loc, desc);
+
     res.status(201).json(event);
   } catch (error) {
     console.error('Create Event Error:', error);
@@ -446,19 +472,34 @@ exports.getEventById = async (req, res) => {
 
 exports.updateEvent = async (req, res) => {
   const { id } = req.params;
-  const { name, type, startDate, endDate, maxParticipants, parentId} = req.body;
+  const { name, type, startDate, endDate, maxParticipants, parentId, location, description} = req.body;
   
   console.log("Request Params: " + JSON.stringify(req.params));
   console.log("Request Body: " + JSON.stringify(req.body));
   console.log("Request File: " + JSON.stringify(req.file));
  
+  let loc = location ? location : null;
+  let desc = description ? description : null;
+
   let groups = req.body.groups;
+  
 
   if (!Array.isArray(groups)) {
     if (groups) {
       groups = [groups];
     } else {
       groups = [];
+    }
+  }
+
+  let teams = req.body.teams;
+  console.log("Teams: " + teams);
+
+  if (!Array.isArray(teams)) {
+    if (teams) {
+      teams = [teams];
+    } else {
+      teams = [];
     }
   }
   
@@ -520,7 +561,7 @@ exports.updateEvent = async (req, res) => {
     }
 
     // Proceed to update the event
-    const updatedEvent = await Event.updateEvent(id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups);
+    const updatedEvent = await Event.updateEvent(id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams, loc, desc);
     if (updatedEvent) {
       res.status(200).json(updatedEvent);
     } else {

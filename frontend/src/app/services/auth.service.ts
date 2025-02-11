@@ -22,7 +22,7 @@ export class AuthService {
   }
 
   register(data: any): any {
-    return this.apiService.post("users/register", data).pipe(
+    return this.apiService.post("users", data).pipe(
       tap((data) => {
         localStorage.setItem(this.tokenKey, data['token']);
       })

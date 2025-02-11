@@ -68,8 +68,8 @@
         </div>
         <div class="row mt-2">
           <div class="col-6">
-            <strong d-flex justify-content-center>Date:</strong> {{ selectedEvent.date | date: 'MMM dd' }} <br>
-            <strong>Time:</strong> {{ selectedEvent.startTime }} - {{ selectedEvent.endTime }}
+            <strong d-flex justify-content-center>Date:</strong> {{ selectedEvent.startDate | date: 'MMM dd' }} <br>
+            <strong>Time:</strong> {{ selectedEvent.startDate | date: "HH:mm" }} - {{ selectedEvent.endDate | date: "HH:mm" }}
           </div>
           <div class="col-6 d-flex align-items-center justify-content-center">
             <p style="margin:auto">{{ selectedEvent.location }}</p>
@@ -78,7 +78,15 @@
         <hr>
         <p>{{ selectedEvent.description }}</p>
         <ul class="list-group info mt-3">
-          <ng-container *ngFor="let status of userStatuses">
+          <div><h3>Participants</h3> </div>
+
+          <ng-container *ngFor="let participant of selectedEvent.participants">
+            <li class="list-group-item d-flex justify-content-between" [value]="participant.id">
+              {{ participant.first_name }} {{ participant.last_name }}
+
+          </ng-container>
+
+          <!-- <ng-container *ngFor="let status of userStatuses">
             <button [ngClass]="{
                 'disabled': selectedEvent.users[status].length === 0,
                 'dropdown-button btn btn-primary list-group-item mt-2 d-flex justify-content-between': true
@@ -101,10 +109,10 @@
                 </li>
               </ul>
             </div>
-          </ng-container>
+          </ng-container> -->
         </ul>
 
-        <div *ngIf="selectedEvent.subevent_name">
+        <!-- <div *ngIf="selectedEvent.subevent_name">
           <hr>
           <hr>
           <div class="text-center">
@@ -148,7 +156,7 @@
               </div>
             </ng-container>
           </ul>
-        </div>
+        </div> -->
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -250,7 +258,7 @@
             </div>
           </div>
 
-          <!-- <div class="mb-3 form-floating">
+          <div class="mb-3 form-floating">
             <input type="text" id="eventLocation" formControlName="location" class="form-control"
               placeholder="Enter event location">
             <label for="eventLocation" class="form-label">Location</label>
@@ -259,7 +267,7 @@
             <textarea id="eventDescription" formControlName="description" class="form-control"
               placeholder="Enter event description" rows="3"></textarea>
             <label for="eventDescription" class="form-label">Description</label>
-          </div> -->
+          </div>
 
 
           <!-- <div class="collapse mt-3" id="subEventCreation">

@@ -46,7 +46,6 @@ const Event = sequelize.define(
     },
     groups: {
       type: DataTypes.TEXT, // Use TEXT to store JSON string
-      allowNull: false,
       defaultValue: '[]', // Empty JSON array as a string
       get() {
         const rawValue = this.getDataValue('groups');
@@ -58,15 +57,20 @@ const Event = sequelize.define(
     },
     teams: {
       type: DataTypes.TEXT, // Use TEXT to store JSON string
-      allowNull: false,
       defaultValue: '[]', // Empty JSON array as a string
       get() {
-        const rawValue = this.getDataValue('groups');
+        const rawValue = this.getDataValue('teams');
         return JSON.parse(rawValue);
       },
       set(value) {
-        this.setDataValue('groups', JSON.stringify(value));
+        this.setDataValue('teams', JSON.stringify(value));
       },
+    },
+    location: {
+      type: DataTypes.STRING,
+    },
+    description: {
+      type: DataTypes.STRING,
     },
   },
   {
@@ -180,7 +184,7 @@ Event.getAll = async () => {
   });
 };
 
-Event.createEvent = async (name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups) => {
+Event.createEvent = async (name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams, location, description) => {
   try {
     const event = await Event.create({
       name,
@@ -191,6 +195,9 @@ Event.createEvent = async (name, type, startDate, endDate, maxParticipants, imag
       imagePath: imagePath || null,
       parentId: parentId || null,
       groups: groups, // Assign groups directly
+      teams: teams, // Assign teams directly
+      location: location || '',
+      description: description || '',
     });
     return event;
   } catch (error) {
@@ -199,7 +206,7 @@ Event.createEvent = async (name, type, startDate, endDate, maxParticipants, imag
   }
 };
 
-Event.createEventAlternative = async (name, type, startDate, endDate, maxParticipants, imagePath, parentId, teams) => {
+Event.createEventAlternative = async (name, type, startDate, endDate, maxParticipants, imagePath, parentId, teams, location, description) => {
   try {
     const event = await Event.create({
       name,
@@ -210,6 +217,8 @@ Event.createEventAlternative = async (name, type, startDate, endDate, maxPartici
       imagePath: imagePath || null,
       parentId: parentId || null,
       teams: teams, // Assign groups directly
+      location: location || '',
+      description: description || '',
     });
     return event;
   } catch (error) {
@@ -243,7 +252,7 @@ Event.findById = async (id) => {
   return await Event.findByPk(id);
 };
 
-Event.updateEvent = async (id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups) => {
+Event.updateEvent = async (id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams, location, description) => {
   const event = await Event.findByPk(id);
   if (event) {
     event.name = name;
@@ -254,7 +263,9 @@ Event.updateEvent = async (id, name, type, startDate, endDate, maxParticipants, 
     event.imagePath = imagePath;
     event.parentId = parentId;
     event.groups = groups;
-    event.teams = event.teams;  //keep it the same here
+    event.teams = teams;
+    event.location = location;
+    event.description = description;
     return await event.save();
   }
   return null; // Event not found

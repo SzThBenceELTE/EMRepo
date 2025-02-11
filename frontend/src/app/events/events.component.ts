@@ -70,16 +70,38 @@ export class EventsComponent {
     }
   };
 
+  currentEvent: any = {
+    name: '',
+    teams: [],
+    startTime: '',
+    endTime: '',
+    location: '',
+    description: '',
+    type: '',
+    startDate: '',
+    endDate: '',
+    maxParticipants: '',
+    imagePath: '',
+    parentId: '',
+  }
+
   //elements of the form here
   eventForm = new FormGroup({
     name: new FormControl(''),
-    // limit: new FormControl(''),
     teams: new FormControl([]),
-    //date: new FormControl(''),
     startTime: new FormControl(''),
     endTime: new FormControl(''),
-    //location: new FormControl(''),
-    //description: new FormControl(''),
+    location: new FormControl(''),
+    description: new FormControl(''),
+    type: new FormControl(''),
+    startDate: new FormControl(''),
+    endDate: new FormControl(''),
+    maxParticipants: new FormControl(''),
+    imagePath: new FormControl(''),
+    parentId: new FormControl(''),
+
+     // limit: new FormControl(''),
+    //date: new FormControl(''),
     // subevent_name: new FormControl(''),
     // subevent_limit: new FormControl(''),
     // subevent_startTime: new FormControl(''),
@@ -88,13 +110,7 @@ export class EventsComponent {
     // subevent_description: new FormControl(''),
 
     // name: new FormControl(''),
-    type: new FormControl(''),
-    startDate: new FormControl(''),
-    endDate: new FormControl(''),
-    maxParticipants: new FormControl(''),
-    imagePath: new FormControl(''),
-    parentId: new FormControl(null),
-    // teams: new FormControl([]),
+    
 
   });
   //probably the image
@@ -127,10 +143,13 @@ export class EventsComponent {
   //current one
   setSelectedEvent(event_id: number) {
     this.selectedEvent = this.events.find(event => event.id === event_id);
+    this.currentEvent = this.events.find(event => event.id === event_id);
+    console.log(this.selectedEvent);
   }
   //applies changes after editing
   fetchEditEvent(event_id: number) {
     this.errors = [];
+    this.eventForm.reset();
     this.setSelectedEvent(event_id);
 
     if (!!this.selectedEvent.subevent_name !== this.subEventCollapse) {
@@ -138,16 +157,29 @@ export class EventsComponent {
     }
 
     this.selectedFile = null;
-    this.imagePreviewSrc = this.selectedEvent.image;
+    this.imagePreviewSrc = null;
     this.newEventSubmit = false;
 
-    this.eventForm.patchValue(this.selectedEvent);
     this.eventForm.patchValue({
-      teams: this.selectedEvent.teams.map((team: any) => ({
-        item_id: team.id,
-        item_text: team.name
-      }))
+      name: this.selectedEvent.name,
+      location: this.selectedEvent.location,
+      description: this.selectedEvent.description,
+      maxParticipants: this.selectedEvent.maxParticipants,
+      startDate: new Date(Date.parse(this.selectedEvent.startDate)).toISOString().slice(0, 10),
+      startTime: new Date(Date.parse(this.selectedEvent.startDate)).toISOString().slice(11, 16),
+      endDate: new Date(Date.parse(this.selectedEvent.endDate)).toISOString().slice(0, 10),
+      endTime: new Date(Date.parse(this.selectedEvent.endDate)).toISOString().slice(11, 16),
+      
+      // startTime: this.selectedEvent.startDate.format('HH:mm'),
     });
+
+    // this.eventForm.patchValue(this.selectedEvent);
+    // this.eventForm.patchValue({
+    //   teams: this.selectedEvent.teams.map((team: any) => ({
+    //     item_id: team.id,
+    //     item_text: team.name
+    //   }))
+    // });
   }
   //fetch after creation
   fetchNewEvent() {
@@ -184,11 +216,48 @@ export class EventsComponent {
   
     // Append simple fields
     formData.append('name', this.eventForm.get('name')?.value || '');
+    console.log(this.eventForm.get('name')?.value);
     const typeValue = this.eventForm.get('type')?.value;
     console.log(typeValue?.toString());
     formData.append('maxParticipants', this.eventForm.get('maxParticipants')?.value?.toString() || '');
+    console.log(this.eventForm.get('maxParticipants')?.value?.toString());
     formData.append('type', typeValue?.toString() || EventTypeEnum.MEETING.toString());
-    formData.append('teams', JSON.stringify(this.eventForm.get('teams')?.value ?? []));
+    console.log(typeValue?.toString());
+    const selectedTeams = this.eventForm.get('teams')?.value; // This is an array of objects
+    
+    // Map over the selected items to extract only the item_id values
+    const teamIds = Array.isArray(selectedTeams)
+      ? selectedTeams.map((team: { item_id: number; item_text: string }) => team.item_id)
+      : [];
+    
+    // formData.append('teams', JSON.stringify(teamIds));
+
+    for (const team of teamIds) {
+      formData.append('teams', team.toString());
+    }
+
+    console.log(teamIds);
+
+    const parent = this.eventForm.get('parentId')?.value;
+    const parents = Array.isArray(parent)
+     ? parent.map((event: { item_id: number | null; item_text: string }) => event.item_id)[0]
+     : null;
+
+    
+    if (parents != null) {
+      formData.append('parentId', JSON.stringify(parents));
+      console.log(parents + " is the parent");
+    }
+    
+    
+    
+
+
+
+    formData.append('location', this.eventForm.get('location')?.value || '');
+    console.log(this.eventForm.get('location')?.value);
+    formData.append('description', this.eventForm.get('description')?.value || '');
+    console.log(this.eventForm.get('description')?.value);
     // Retrieve date and time fields from the form
     const startDateStr = this.eventForm.get('startDate')?.value; // Expected format: "YYYY-MM-DD"
     const startTimeStr = this.eventForm.get('startTime')?.value; // Expected format: "HH:mm"
@@ -216,17 +285,28 @@ export class EventsComponent {
     formData.append('endDate', fullEndDateTime);
 
 
+    let gr = console.log("Group type enum: " + Object.values(GroupTypeEnum));
 
-    for(const group in Object.values(GroupTypeEnum)){
-      formData.append('group', group);  //for some reason this is just an empty []
-    }
+
+    // for(const group in Object.values(GroupTypeEnum)) {
+    //   console.log("Found group: " + group);
+    //   formData.append('groups', group);  //for some reason this is just an empty []
+    // }
+
+    formData.append('groups', 'RED');
+    formData.append('groups', 'GREEN');
+    formData.append('groups', 'BLUE');
+    formData.append('groups', 'YELLOW');
 
 
     
     //Parent Id doesn't save corrrectly, everything else seems to be good
-    const parent = JSON.stringify(this.eventForm.get('parentId')?.value);
-    console.log(parent);
-    formData.append('parentId', parent || '');
+    // const parent = JSON.stringify(this.eventForm.get('parentId')?.value);
+    // console.log("Parent value:" + parent);
+    // if (this.eventForm.get('parentId')?.value != null && this.eventForm.get('parentId')?.value?.event_id == null) {
+    //   formData.append('parentId', null);
+    // }
+    // formData.append('parentId', parent || '');
   
     // Append image if one is selected
     if (this.selectedFile) {

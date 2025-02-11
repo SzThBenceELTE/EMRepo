@@ -14,10 +14,13 @@ import { AuthService } from '../../services/auth.service';
 })
 export class RegisterComponent {
   userForm = new FormGroup({
-    first_name: new FormControl(''),
-    last_name: new FormControl(''),
-    username: new FormControl(''),
-    password: new FormControl('')
+    name: new FormControl(''),
+    email: new FormControl(''),
+    password: new FormControl(''),
+    firstName: new FormControl(''),
+    surname: new FormControl(''),
+    role: new FormControl('MANAGER'),
+    group: new FormControl('')
   });
 
   constructor(private authService: AuthService, private router: Router) { }

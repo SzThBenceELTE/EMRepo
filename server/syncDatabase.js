@@ -13,10 +13,12 @@ const JoiningInfo = require('./models/JoiningInfoModel');
 
 const syncDatabase = async () => {
   try {
-    //await sequelize.getQueryInterface().dropTable('Events_backup', { force: true });
-    //console.log('Table dropped successfully.');
+    await sequelize.getQueryInterface().dropTable('Events_backup', { force: true });
+    console.log('Events_backup Table dropped successfully.');
+    await sequelize.getQueryInterface().dropTable('EventParticipants_backup', { force: true });
+    console.log('EventParticipants_backup Table dropped successfully.');
     await sequelize.query('PRAGMA foreign_keys = OFF');
-    await sequelize.sync({ alter: true }); // Adjust as needed
+    await sequelize.sync({ force: true }); // Adjust as needed
     await sequelize.query('PRAGMA foreign_keys = ON');
     console.log('Database synchronized successfully.');
   } catch (error) {
