@@ -14,19 +14,19 @@
   @for(event of paginatedEvents; track event.id){
   <div class="col-md-6 mb-5">
     <div class="event-container text-center">
-      <img [src]="event.image" class="img-fluid" alt="">
+      <img [src]="getImagePath(event)" class="img-fluid" alt="">
       <div class="mt-2">
         <div class="align-items-center mb-2 d-flex justify-content-center mt-2" style="height: 50px;">
           <h4><strong>{{ event.name }} </strong></h4>
         </div>
         <div class="row mt-2">
           <div class="col-6">
-            <strong>{{ event.date | date: 'MMM dd' }}</strong>
-            <p>{{ event.startTime }} - {{event.endTime}}</p>
+            <strong>{{ event.startDate | date: 'MMM dd' }}</strong>
+            <p>{{ event.startDate | date: 'HH:mm' }} - {{ event.endDate | date: 'HH:mm' }}</p>
           </div>
           <div class="col-6 d-flex align-items-center justify-content-center">
 
-            <p>{{event.users.accepted.length}} / {{ event.limit }}</p>
+            <p>{{event.currentParticipants}} / {{ event.maxParticipants }}</p>
           </div>
         </div>
         <div class="row">
@@ -178,10 +178,17 @@
             </div>
             <div class="col-3">
               <div class="form-floating">
-                <input type="text" id="eventLimit" formControlName="limit" class="form-control" placeholder="15"
+                <input type="number" id="maxParticipants" formControlName="maxParticipants" class="form-control" placeholder="15"
                   min="1">
-                <label class="form-label" for="eventLimit">Limit</label>
+                <label class="form-label" for="maxParticipants">Limit</label>
               </div>
+            </div>
+          </div>
+          <div class="mb-3 row">
+            <div class="col-12 d-flex align-items-center">
+              <ng-multiselect-dropdown class="w-100 form-control" formControlName="type"
+                [placeholder]="'Event Type'" [settings]="eventsDropdownSettings" [data]="typesInDropdownFormat">
+              </ng-multiselect-dropdown>
             </div>
           </div>
           <div class="mb-3 row">
@@ -202,21 +209,32 @@
             </div>
           </div>
           <div class="mb-3 row">
-            <div class="col-6">
+            <div class="col-8">
               <div class="form-floating">
-                <input type="date" id="eventDate" formControlName="date" class="form-control"
+                <input type="startDate" id="startDate" formControlName="startDate" class="form-control"
                   placeholder="Enter event date">
-                <label for="eventDate" class="form-label">Event Date</label>
+                <label for="startDate" class="form-label">Event Date</label>
               </div>
             </div>
-            <div class="col-3">
+            <div class="col-4">
               <div class="form-floating">
                 <input type="time" id="startTime" formControlName="startTime" class="form-control"
                   placeholder="Enter start time">
                 <label for="startTime" class="form-label">Start Time</label>
               </div>
             </div>
-            <div class="col-3">
+            
+            
+          </div>
+          <div class="mb-3 row">
+            <div class="col-8">
+              <div class="form-floating">
+                <input type="endDate" id="endDate" formControlName="endDate" class="form-control"
+                  placeholder="Enter event date">
+                <label for="endDate" class="form-label">Event Date</label>
+              </div>
+            </div>
+            <div class="col-4">
               <div class="form-floating">
                 <input type="time" id="endTime" formControlName="endTime" class="form-control"
                   placeholder="Enter end time">
@@ -224,7 +242,15 @@
               </div>
             </div>
           </div>
-          <div class="mb-3 form-floating">
+          <div class="mb-3 row">
+            <div class="col-12 d-flex align-items-center">
+              <ng-multiselect-dropdown class="w-100 form-control" formControlName="parentId" type="number"
+                [placeholder]="'Parent Event'" [settings]="eventsDropdownSettings" [data]="eventsInDropdownFormat">
+              </ng-multiselect-dropdown>
+            </div>
+          </div>
+
+          <!-- <div class="mb-3 form-floating">
             <input type="text" id="eventLocation" formControlName="location" class="form-control"
               placeholder="Enter event location">
             <label for="eventLocation" class="form-label">Location</label>
@@ -233,10 +259,10 @@
             <textarea id="eventDescription" formControlName="description" class="form-control"
               placeholder="Enter event description" rows="3"></textarea>
             <label for="eventDescription" class="form-label">Description</label>
-          </div>
+          </div> -->
 
 
-          <div class="collapse mt-3" id="subEventCreation">
+          <!-- <div class="collapse mt-3" id="subEventCreation">
             <div class="mb-2 row">
               <hr>
               <hr>
@@ -286,13 +312,13 @@
               [ngClass]="{ 'show': hasSubEvent(), 'hide': !hasSubEvent() }">
               <button type="button" class="btn btn-danger btn-sm" (click)="deleteSubEvent()">Delete Sub Event</button>
             </div>
-          </div>
+          </div> -->
           <div *ngFor="let error of errors">
             <p class="text-danger text-center"> {{ error }}! </p>
           </div>
 
           <div class="d-flex justify-content-between">
-            <button class="btn btn-secondary" *ngIf="!subEventCollapse" type="button" data-bs-toggle="collapse"
+            <!-- <button class="btn btn-secondary" *ngIf="!subEventCollapse" type="button" data-bs-toggle="collapse"
               data-bs-target="#subEventCreation" aria-expanded="false" aria-controls="subEventCreation"
               id="subEventCreationButton"
               (click)="subEventCollapse = !subEventCollapse">@if(eventForm.get('subevent_name')?.value){Show Sub
@@ -303,7 +329,7 @@
               data-bs-target="#subEventCreation" aria-expanded="false" aria-controls="subEventCreation"
               id="subEventCreationButton" (click)="subEventCollapse = !subEventCollapse">
               Hide Sub Event <i class="bi bi-arrow-up-short"></i>
-            </button>
+            </button> -->
             <button type="button" *ngIf="!newEventSubmit" class="btn btn-danger" (click)="deleteEvent()"
               data-bs-toggle="modal" data-bs-target="#confirmationModal">Delete Event</button>
             <button type="submit" class="btn btn-primary">

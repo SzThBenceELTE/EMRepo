@@ -94,4 +94,5 @@ Person.findBySurname = async (surname) => {
     return await Person.findOne({ where: { surname } });
 };
 
+
 module.exports = Person;

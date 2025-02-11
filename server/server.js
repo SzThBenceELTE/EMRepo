@@ -61,6 +61,9 @@ app.use(cors(corsOptions));
 
 
 // API Routes
+//console.log('Serving events from:', path.join(__dirname, 'uploads', 'events'));
+console.log('Serving uploads from:', path.join(__dirname, 'uploads'));
+//app.use('/uploads/events', express.static(path.join(__dirname, 'uploads', 'events')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve static files from the 'uploads' directory
 app.use('/api', userRoutes);
 app.use('/api', personRoutes);

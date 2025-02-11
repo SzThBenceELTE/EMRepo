@@ -20,7 +20,7 @@
   <tbody>
     <tr *ngFor="let user of paginatedUsers">
       <td>{{ user.firstName }} {{ user.surname }}</td>
-      <td class="text-center">{{ user.role }}</td>
+      <td class="text-center">{{ getUserForAccount(user.UserId).name }}</td>
       <td class="text-end pe-3">
         <button (click)="deleteUser(user.id)" class="btn btn-danger btn-sm" data-bs-toggle="modal"
           data-bs-target="#confirmationModal">

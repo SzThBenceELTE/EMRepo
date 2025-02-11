@@ -802,3 +802,21 @@ exports.joinEvent = async (req, res) => {
       res.status(500).json({ message: 'Internal server error.' });
     }
   };
+
+  // exports.getUploadImage = (req, res) => {
+  //   // Extract the filename from the URL parameter
+  //   const filename = req.params.filename;
+    
+  //   // Build the absolute path to the file.
+  //   // Assuming your files are stored in "uploads/events/" relative to your project root.
+  //   const imagePath = path.resolve(__dirname, '..', 'uploads', 'events', filename);
+  
+  //   // Send the file. sendFile will automatically set the correct Content-Type.
+  //   res.sendFile(imagePath, (err) => {
+  //     if (err) {
+  //       console.error('Error sending file:', err);
+  //       // If the file is not found, send a 404 error
+  //       res.status(err.status || 404).json({ message: 'File not found' });
+  //     }
+  //   });
+  // };

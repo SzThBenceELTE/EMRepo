@@ -1,7 +1,7 @@
 const {Op, Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../sequelize'); // Import from sequelize.js
-const EventEnum = require('../enums/EventEnum');
 const now = new Date();
+const Person = require('./PersonModel');
 
 /*
 What we need:
@@ -26,7 +26,12 @@ const Team = sequelize.define(
 );
 
 Team.getAll = async () => {
-    return await Team.findAll();
+    return await Team.findAll({
+        include: [{
+            model: Person,
+            through: { attributes: [] },
+        }],
+    });
 };
 
 Team.createTeam = async (name) => {
@@ -45,7 +50,10 @@ Team.editTeam = async (id, name) => {
 Team.deleteTeam = async (id) => {
     const team = await Team.findByPk(id);
     if (team) {
-        return await team.destroy();
+        await team.setPeople([]); // Deletes all the member associations first
+        return await team.destroy(); //Then the actual team
     }
     return null;
 };
+
+module.exports = Team;

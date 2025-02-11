@@ -21,6 +21,8 @@ export class UsersComponent {
   //The users are actually people
   users: any[] = [];
   filteredUsers: any[] = [];
+  userAccounts: any[] = [];
+  filteredUserAccounts: any[] = [];
   errors: string[] = [];
   lastFilterTerm = '';
 
@@ -49,6 +51,7 @@ export class UsersComponent {
 
   constructor(private apiService: ApiService,  private authService: AuthService, private router: Router) {
     this.fetchUsers();
+    this.loadAllUserAccounts();
   }
 
   fetchUsers() {
@@ -58,6 +61,20 @@ export class UsersComponent {
     });
     
   }
+
+  loadAllUserAccounts() {
+    this.apiService.get('users').subscribe((data) => {
+      this.userAccounts = data;
+      console.log(this.userAccounts);
+    });
+  }
+
+  getUserForAccount(accountId: number) {
+    console.log(this.userAccounts.find(userAccounts => userAccounts.id === accountId));
+    return this.userAccounts.find(userAccounts => userAccounts.id === accountId);
+  }
+
+
 
   createUser() {
     this.errors = [];
@@ -133,7 +150,8 @@ export class UsersComponent {
     const lowerFilter = filterTerm.toLowerCase();
     if (filterTerm) {
       this.filteredUsers = this.users.filter(user =>
-        (user.firstName + " " + user.surname).toLowerCase().includes(lowerFilter)
+        (user.firstName + " " + user.surname).toLowerCase().includes(lowerFilter) ||
+        this.getUserForAccount(user.UserId).name.toLowerCase().includes(lowerFilter)
       );
     } else {
       this.filteredUsers = this.users;

@@ -15,18 +15,18 @@ import { FilterComponent } from '../filter/filter.component';
   styleUrls: ['./teams.component.css']
 })
 export class TeamsComponent {
-  teams: any[] = [];
-  filteredTeams: any[] = [];
+  teams: any[] = [];  //all teams loaded in for presentation
+  filteredTeams: any[] = [];  //the filtered ones
   errors: string[] = [];
-  usersWithoutTeam: { item_id: number, item_text: string }[] = [];
-  selectedTeamId: any;
-  lastFilterTerm = '';
+  usersWithoutTeam: { item_id: number, item_text: string }[] = []; //users without team are just loaded in, need to change this to reflect my users (mainly people)
+  selectedTeamId: any;  //Currently selected team id - team taken from array
+  lastFilterTerm = '';  //filter
 
   teamForm = new FormGroup({
     name: new FormControl('')
-  });
+  }); //this will create the team from just a name
   selectUsersForm = new FormGroup({
-    users: new FormControl([])
+    users: new FormControl([])  //this will select users to add to the team (?)
   });
 
   actionAfterConfirmation = () => { }
@@ -48,12 +48,13 @@ export class TeamsComponent {
     this.apiService.get('teams').subscribe((data) => {
       this.teams = data;
       this.refreshTeams(this.lastFilterTerm);
+      console.log(this.teams);
     });
   }
 
   fetchUsersWithoutTeam() {
-    this.apiService.get('people/managers').subscribe(users => {
-      this.usersWithoutTeam = users.map((user: any) => { return { item_id: user.id, item_text: user.first_name + ' ' + user.last_name } });
+    this.apiService.get('people/noTeams').subscribe(users => {
+      this.usersWithoutTeam = users.map((user: any) => { return { item_id: user.id, item_text: user.firstName + ' ' + user.surname } });
     });
   }
 
@@ -82,12 +83,16 @@ export class TeamsComponent {
     }
   }
 
+  //Solved until this point, continue from here
+
   removeUserFromTeam(team_id: number, user_id: number) {
     const team = this.teams.find(team => team.id === team_id);
-    const user = team.users.find((user: any) => user.id === user_id);
-    this.confirmationMessage = `remove ${user.first_name} ${user.last_name} from ${team.name}`;
+    console.log(team);
+    const user = team.People.find((user: any) => user.id === user_id);
+    console.log(user);
+    this.confirmationMessage = `remove ${user.firstName} ${user.surname} from ${team.name}`;
     this.actionAfterConfirmation = () => {
-      this.apiService.delete(`teams/${team_id}/users/${user_id}`).subscribe(() => {
+      this.apiService.delete(`teams/remove/${team_id}/${user_id}`).subscribe(() => {
         this.fetchTeams();
       });
     }

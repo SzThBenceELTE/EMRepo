@@ -15,10 +15,10 @@
       [attr.aria-controls]="'teams' + team.id">
       <strong>{{ team.name }}</strong>
       <span class="badge" [ngClass]="{
-           'text-bg-secondary': team.users.length === 0, 
-           'text-bg-primary': team.users.length > 0
+           'text-bg-secondary': team.People.length === 0, 
+           'text-bg-primary': team.People.length > 0
            }">
-         {{team.users.length}}
+         {{team.People.length}}
       </span>
    </button>
    <div class="collapse" [id]="'teams' + team.id">
@@ -33,9 +33,9 @@
                Delete Team
             </button>
          </li>
-         @for (user of team.users; track user.id){
+         @for (user of team.People; track user.id){
          <li class="list-group-item d-flex justify-content-between border-0">
-            {{user.first_name}} {{user.last_name}}
+            {{user.firstName}} {{user.surname}}
             <button (click)="removeUserFromTeam(team.id, user.id)"
                class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmationModal">
                <i class="bi bi-trash"></i>

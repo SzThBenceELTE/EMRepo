@@ -46,6 +46,12 @@ Event.belongsTo(Event, {
   onUpdate: 'CASCADE',
 });
 
+Team.belongsToMany(Person, { through: 'TeamMembers' });
+Person.belongsToMany(Team, { through: 'TeamMembers' });
+
+Team.belongsToMany(Event, { through: 'TeamEvents' });
+Event.belongsToMany(Team, { through: 'TeamEvents' });
+
 // // Many-to-Many relationship between Event and Group
 // Event.belongsToMany(Group, {
 //     through: 'EventGroups',

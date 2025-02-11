@@ -12,8 +12,12 @@ router.get('/people/group/:group', personController.getPersonsFromGroup);
 router.get('/people/developers', personController.getDevelopers);
 //Gets all managers in the system
 router.get('/people/managers', personController.getManagers);
+//Fetch people with no teams
+router.get('/people/noTeams', personController.getPersonsWithNoTeams);
 //Creates a new Person
 router.post('/people', personController.createPerson);
+//Get user associated with the person
+router.get('/people/:personId/user', personController.getUserFromPerson);
 //Gets the person associated with this id
 router.get('/people/:id', personController.getPersonById);
 //Updates the person associated with this id
@@ -22,4 +26,9 @@ router.put('/people/:id', personController.updatePerson);
 router.delete('/people/:id', personController.deletePerson);
 //Gets all events that the person is subscribed to for the phone app
 router.get('/people/:personId/subscribed-events', personController.getSubscribedEvents);
+
+//Fetch teams for a given person
+router.get('/people/:personId/teams', personController.getTeamsForPerson);
+
+
 module.exports = router;

@@ -1,6 +1,7 @@
 const e = require('express');
 const Person = require('../models/PersonModel');
 const User = require('../models/UserModel');
+const Team = require('../models/TeamModel');
 const EventParticipants = require('../models/EventParticipants');
 
 exports.getPersons = async (req, res) => {
@@ -48,6 +49,24 @@ exports.getManagers = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error retrieving persons' });
+    }
+};
+
+exports.getUserFromPerson = async (req, res) => {
+    const { personId } = req.params;
+    try {
+        const person = await Person.findByPk(personId);
+        if (!person) {
+            return res.status(404).json({ message: 'Person not found' });
+        }
+        const user = await User.findByPk(person.UserId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.status(200).json(user);
+    } catch (error) {
+        console.error('Error fetching user from person:', error);
+        res.status(500).json({ message: 'Internal server error.' });
     }
 };
 
@@ -150,3 +169,43 @@ exports.getSubscribedEvents = async (req, res) => {
         res.status(500).json({ message: 'Internal server error.' });
     }
 };
+
+exports.getTeamsForPerson = async (req, res) => {
+    const { personId } = req.params;
+    console.log('Fetching teams for personId:', personId);
+
+    try {
+        const person = await Person.findByPk(personId);
+        if (!person) {
+            return res.status(404).json({ message: 'Person not found.' });
+        }
+
+        const teams = await person.getTeams();
+        console.log('Teams:', teams);
+
+        res.status(200).json(teams);
+    } catch (error) {
+        console.error('Error fetching teams:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+
+exports.getPersonsWithNoTeams = async (req, res) => {
+    try {
+        const persons = await Person.findAll({
+            include: [{
+                model: Team,
+                through: { attributes: [] }  // Exclude join table attributes if desired
+            }]
+        });
+
+        // Now, each person should have a Teams property (an empty array if no teams)
+        const personsWithNoTeams = persons.filter(person => person.Teams.length === 0);
+        console.log('Persons with no teams:', personsWithNoTeams);
+
+        res.status(200).json(personsWithNoTeams);
+    } catch (error) {
+        console.error('Error fetching persons with no teams:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+}
