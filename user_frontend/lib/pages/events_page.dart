@@ -23,17 +23,26 @@ class _EventsPageState extends State<EventsPage> {
   void initState() {
     super.initState();
     _fetchAndFilterEvents();
+    print("Init state done");
   }
 
   Future<void> _fetchAndFilterEvents() async {
     try {
+      print("Fetch and Filter Started");
       final eventsData = await EventService.fetchEvents();
-      final events = eventsData['events'] as List;
+      final events = eventsData;
+      print("Got events: $events");
 
       final filteredEvents = events.where((event) {
-        final eventDate = DateTime.parse(event['date']);
+        final eventDate = DateTime.parse(event['startDate']);
+        print("Event date: $eventDate");
         final isPast = eventDate.isBefore(DateTime.now());
+        print("Is past: $isPast");
         final isAccepted = event['status'] == 'accepted';
+        print("Is accepted: $isAccepted");
+
+        print("Past events: ${widget.pastEvents}");
+        print("Only accepted: ${widget.onlyAccepted}");
 
         return (widget.pastEvents ? isPast : !isPast) &&
             (!widget.onlyAccepted || isAccepted);
@@ -41,8 +50,11 @@ class _EventsPageState extends State<EventsPage> {
 
       setState(() {
         _events = filteredEvents;
+        print("Events: $_events");
         _filteredEvents = filteredEvents;
+        print("Filtered events: $_filteredEvents");
         _isLoading = false;
+        print("Fetch and Filter Done");
       });
     } catch (e) {
       setState(() {
@@ -54,6 +66,7 @@ class _EventsPageState extends State<EventsPage> {
 
   void _filterEventsByName(String query) {
     setState(() {
+      print("Filtering events by name: $query");
       _filteredEvents = _events.where((event) {
         final name = (event['name'] ?? '').toLowerCase();
         return name.contains(query.toLowerCase());

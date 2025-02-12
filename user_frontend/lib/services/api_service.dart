@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:user_frontend/services/auth_service.dart';
 
 class ApiService {
-  static final String baseUrl = 'http://localhost:3000';
+  static final String baseUrl = 'http://localhost:3000/api';
 
   static Future<http.Response> post(
       String endpoint, Map<String, dynamic> data) async {
@@ -14,6 +14,8 @@ class ApiService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
+
+    print("Got data: ${response.body}");
 
     return response;
   }
@@ -36,6 +38,8 @@ class ApiService {
       'Authorization': 'Bearer $token',
     };
     final url = Uri.parse('$baseUrl$endpoint');
+
+
     return await http.patch(
       url,
       headers: headers,

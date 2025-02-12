@@ -8,6 +8,8 @@ const Team = require('./models/TeamModel');
 const EventParticipants = require('./models/EventParticipants');
 const Group = require('./models/GroupModel');
 const JoiningInfo = require('./models/JoiningInfoModel'); 
+const TeamMembers = require('./models/TeamMembersModel');
+
 
 //Important: all the stuff needs to be included, or the sync doesn't see it
 

@@ -8,6 +8,7 @@ const { authenticateToken } = require('../controllers/auth/AuthenticationChecker
 router.get('/people', personController.getPersons);
 //Gets every person in the system that is in the group
 router.get('/people/group/:group', personController.getPersonsFromGroup);
+//
 //Gets all developers in the system
 router.get('/people/developers', personController.getDevelopers);
 //Gets all managers in the system

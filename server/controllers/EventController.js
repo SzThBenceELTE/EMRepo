@@ -576,6 +576,8 @@ exports.updateEvent = async (req, res) => {
 exports.deleteEvent = async (req, res) => {
     const { id } = req.params;
     try {
+        
+        const event = await Event.findByPk(id);
         const deletedEvent = await Event.deleteEvent(id);
         if (deletedEvent) {
             res.status(204).end();

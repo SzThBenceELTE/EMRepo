@@ -29,7 +29,7 @@ class EventProvider with ChangeNotifier {
   Future<List<EventModel>> fetchEvents(String token) async {
     try {
       List<EventModel> data = await ApiService().fetchEvents(token);
-      //print('Fetched Events: $data'); // Optional: For debugging
+      print('Fetched Events: $data'); // Optional: For debugging
       return data; // Directly return the mapped EventModel instances
     } catch (error) {
       print('Error in EventProvider.fetchEvents: $error');

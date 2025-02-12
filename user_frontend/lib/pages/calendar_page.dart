@@ -26,17 +26,24 @@ class _CalendarPageState extends State<CalendarPage> {
 
   void _fetchEvents() async {
     var events = await EventService.fetchEvents();
+    //print("Got events: $events");
     setState(() {
-      events['events'].forEach((event) {
-        var date = DateTime.parse(event['date']);
+      events.forEach((event) {
+        var date = DateTime.parse(event['startDate']);
+        date = DateTime(date.year, date.month, date.day);
+        //print("Got date $date for event ${event['name']}"); 
         _events[date] = [event];
+        print("Events for current $date are the following: ${_events[date]}");
       });
     });
   }
 
   List<dynamic> _getEventForDay(DateTime day) {
+    print("Getting events for day $day");
     DateTime formattedDate = DateTime.parse(
         '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
+    //print("Normal date: $day");
+    print("Events for day $formattedDate are: ${_events[formattedDate]}");
     return _events[formattedDate] ?? [];
   }
 

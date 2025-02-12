@@ -7,6 +7,10 @@ class ProfilePage extends StatelessWidget {
     return await AuthService.getUserData();
   }
 
+  Future<Map<String, dynamic>?> _getPerson() async {
+    return await AuthService.getPerson();
+  }
+
   void _onLogOutPressed(BuildContext context) async {
     bool? confirmLogout = await showDialog<bool>(
       context: context,
@@ -48,7 +52,8 @@ class ProfilePage extends StatelessWidget {
         title: Text('Profile'),
       ),
       body: FutureBuilder<Map<String, dynamic>?>(
-        future: _getUserData(),
+        future: _getPerson(), //this gets me the user Id, meaning I don't have to find another way of getting it
+                                  //Issue: I need to get the person ID aswell
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -66,21 +71,21 @@ class ProfilePage extends StatelessWidget {
                     CircleAvatar(
                       radius: 30,
                       child: Text(
-                      '${userData!['first_name'][0]}${userData['last_name'][0]}',
+                      '${userData!['firstName'][0]}${userData['surname'][0]}',
                       style: TextStyle(color: Colors.white, fontSize: 24),
                       ),
                     ),
                     SizedBox(height: 25),
                     Text(
-                      '${userData['first_name']} ${userData['last_name']}',
+                      '${userData['firstName']} ${userData['surname']}',
                       style:
                           TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 8),
-                    Text(
-                      'Username: ${userData['username']}',
-                      style: TextStyle(fontSize: 18, color: Colors.grey[700]),
-                    ),
+                    // Text(
+                    //   'Username: ${userData['username']}',
+                    //   style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+                    // ),
                     SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () => _onLogOutPressed(context),

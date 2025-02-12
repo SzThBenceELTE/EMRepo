@@ -53,21 +53,21 @@ class EventWidget extends StatefulWidget {
       this.onStatusChanged = _defaultOnStatusChanged})
       : eventId = event['id'],
         name = event['name'],
-        description = event['description'],
-        date = event['date'],
-        startTime = event['startTime'],
-        endTime = event['endTime'],
-        location = event['location'],
-        limit = event['limit'],
-        image = event['image'],
-        status = event['status'],
-        subevent_name = event['subevent_name'],
-        subevent_description = event['subevent_description'],
-        subevent_startTime = event['subevent_startTime'],
-        subevent_endTime = event['subevent_endTime'],
-        subevent_location = event['subevent_location'],
+        description = event['description'] ?? '',
+        date = event['startDate']  ?? '',
+        startTime = event['startDate'] ?? '',
+        endTime = event['endDate'] ?? '',
+        location = event['location'] ?? '',
+        limit = event['maxParticipants'] ?? 0,
+        image ="localhost:3000\\" + event['imagePath'] ?? '',
+        status = event['status'] ?? 'pending',
+        subevent_name = event['subevent_name'] ?? '',
+        subevent_description = event['subevent_description'] ?? '',
+        subevent_startTime = event['subevent_startTime'] ?? '',
+        subevent_endTime = event['subevent_endTime'] ?? '', 
+        subevent_location = event['subevent_location'] ?? '',
         subevent_limit = event['subevent_limit']?.toString() ?? '',
-        subevent_status = event['subevent_status'],
+        subevent_status = event['subevent_status'] ?? 'pending',
         rank = event['rank'] ?? 0;
 
   static void _defaultOnStatusChanged() {}
@@ -150,6 +150,11 @@ class _EventWidgetState extends State<EventWidget> {
     return '${months[parsedDate.month - 1]} ${parsedDate.day}';
   }
 
+  String _formatTime(String time) {
+    DateTime parsedTime = DateTime.parse(time);
+    return '${parsedTime.hour}:${parsedTime.minute.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.asPage) {
@@ -162,7 +167,7 @@ class _EventWidgetState extends State<EventWidget> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Image.network(widget.image),
+              Image.network(widget.image),  //These don't work, I just don't know at this point why
               SizedBox(height: 10.0),
               Center(
                 child: Text(
@@ -174,7 +179,7 @@ class _EventWidgetState extends State<EventWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('${widget.startTime} - ${widget.endTime}',
+                  Text('${_formatTime(widget.startTime)} - ${_formatTime(widget.endTime)} ',
                       style: TextStyle(fontWeight: FontWeight.bold)),
                   Text(
                       '${widget.date.substring(0, 4)} ${_formatDate(widget.date)}',
@@ -280,7 +285,7 @@ class _EventWidgetState extends State<EventWidget> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('${widget.startTime} - ${widget.endTime}'),
+                    Text('${_formatTime(widget.startTime)} - ${_formatTime(widget.endTime)} '),
                     Text(_formatDate(widget.date)),
                   ],
                 ),
