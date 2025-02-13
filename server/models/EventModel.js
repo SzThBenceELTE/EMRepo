@@ -321,6 +321,7 @@ Event.updateEventFull = async (id, name, type, startDate, endDate, maxParticipan
 Event.deleteEvent = async (id) => {
   sequelize.transaction(async (t) => {
   const event = await Event.findByPk(id);
+  console.log('Event:', event);
   if (event) {
     return await event.destroy({transaction: t});
   }

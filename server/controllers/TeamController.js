@@ -40,6 +40,10 @@ exports.createTeam = async (req, res)  => {
     try{
         const { name } = req.body;
         const newTeam = await Team.createTeam(name);
+
+        const io = socketService.getIo();
+        io.emit('refresh', { message: 'Team created' });
+
         res.status(201).json(newTeam);
     }
     catch(error){
@@ -75,6 +79,8 @@ exports.deleteTeam = async (req,res) => {
         }
         const deletedTeam = await Team.deleteTeam(id);
         if (deletedTeam) {
+            const io = socketService.getIo();
+            io.emit('refresh', { message: 'Team deleted', teamId: deletedTeam.id });
             res.status(200).json(deletedTeam);
         } else {
             res.status(404).json({ message: 'Team not found' });
@@ -106,6 +112,9 @@ exports.addPersonToTeam = async (req, res) => {
   
       // Add the person to the team using the association method
       await team.addPerson(person);
+
+      const io = socketService.getIo();
+      io.emit('refresh', { message: 'Person added', personId: person.id, teamId: team.id });
   
       res.status(200).json({ message: 'Person added to team successfully.' });
     } catch (error) {
@@ -134,6 +143,10 @@ exports.addPersonToTeam = async (req, res) => {
   
       // Remove the person from the team using the association method
       await team.removePerson(person);
+
+      const io = socketService.getIo();
+      io.emit('refresh', { message: 'Person removed', personId: person.id, teamId: team.id });
+  
   
       res.status(200).json({ message: 'Person removed from team successfully.' });
     } catch (error) {
@@ -173,6 +186,10 @@ exports.addUsersToTeam = async (req, res) => {
       // Here we use addPeople to add multiple persons at once.
       await team.addPeople(persons);
   
+      const io = socketService.getIo();
+      io.emit('refresh', { message: 'Team joined', personId: persons, teamId: team.id });
+
+
       return res.status(200).json({ message: 'Users added to team successfully.' });
     } catch (error) {
       console.error('Error adding users to team:', error);
@@ -208,6 +225,9 @@ exports.addUsersToTeam = async (req, res) => {
       // Remove all found persons from the team using the association removal method.
       // Sequelize automatically creates a helper method "removePeople" on the team instance.
       await team.removePeople(persons);
+
+      const io = socketService.getIo();
+      io.emit('refresh', { message: 'Team left', personId: persons, teamId: team.id });
   
       return res.status(200).json({ message: 'Users removed from team successfully.' });
     } catch (error) {

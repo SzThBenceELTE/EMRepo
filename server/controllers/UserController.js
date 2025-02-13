@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/UserModel'); 
 const Person = require('../models/PersonModel');
 const sequelize = require('sequelize');
+const socketService = require('../socketService');
 require('dotenv').config();
 
 const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_here';
@@ -38,6 +39,7 @@ exports.createUser = async (req, res) => {
       // Check if user already exists
       let existingUser = await User.findByEmail(email);
       if (existingUser) {
+
         return res.status(400).json({ message: 'Email already exists' });
       }
   
@@ -64,6 +66,9 @@ exports.createUser = async (req, res) => {
       });
       await newUser.setPerson(newPerson); // Associate the person with the user
       console.log('newUser:', newPerson);
+
+      const io = socketService.getIo();
+      io.emit('refresh', { message: 'User created' });
 
       res.status(201).json({ user: newUser, person: newPerson });
     } catch (error) {
@@ -124,6 +129,8 @@ exports.updateUser = async (req, res) => {
     try {
         const updatedUser = await User.updateUser(id, name, email);
         if (updatedUser) {
+          const io = socketService.getIo();
+          io.emit('refresh', { message: 'User updated', userId: updatedUser.id });
             res.status(200).json(updatedUser);
         } else {
             res.status(404).json({ message: 'User not found' });
@@ -139,6 +146,8 @@ exports.deleteUser = async (req, res) => {
     try {
         const deletedUser = await User.deleteUser(id);
         if (deletedUser) {
+          const io = socketService.getIo();
+          io.emit('refresh', { message: 'User deleted', userId: deletedUser.id });
             res.status(204).send(); // No content to send back
         } else {
             res.status(404).json({ message: 'User not found' });

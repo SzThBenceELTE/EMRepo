@@ -4,10 +4,12 @@ const express = require('express');
 const passport = require('passport');
 const session = require('express-session');
 const sqlite3 = require('better-sqlite3')
-
+// const {WebSocketServer} = require('ws');
 const cors = require('cors');
 const path = require('path');
 const morgan = require('morgan'); // For logging
+const http = require('http');
+const socketIo = require('socket.io');
 
 const userRoutes = require('./routes/UserRoutes'); // API routes for users
 const personRoutes = require('./routes/PersonRoutes'); // API routes for people
@@ -18,14 +20,35 @@ const teamRoutes = require('./routes/TeamRoutes'); // API routes for teams
 const db = require('./db');
 
 const { init: initAuth } = require('./auth');
+const socketService = require('./socketService');
 
-
+// Create the Express app
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());  // Middleware to parse JSON bodies
 
+// // Websocket server
+// const sockserver = new WebSocketServer({ port: 443});
+// sockserver.on('connection', ws => {
+//   console.log('New client connected!')
+//   ws.send('connection established')
+//   ws.on('close', () => console.log('Client has disconnected!'))
+//   ws.on('message', data => {
+//     sockserver.clients.forEach(client => {
+//       console.log(`distributing message: ${data}`)
+//       client.send(`${data}`)
+//     })
+//   })
+//   ws.onerror = function () {
+//     console.log('websocket error')
+//   }
+// })
+
+
+
 // Logging Middleware
 app.use(morgan('combined')); // Logs detailed information about each request
+
 
 
 // Modify the CORS options
@@ -48,6 +71,28 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+
+
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: "http://localhost:4200", // Allow requests from your Angular app's origin
+    methods: ["GET", "POST"],
+    credentials: true, // if you need to support cookies or authentication
+  }
+});
+
+socketService.init(io); // Initialize the socket service
+
+// When a client connects
+io.on('connection', (socket) => {
+  console.log(`Client connected: ${socket.id}`);
+  
+  socket.on('disconnect', () => {
+    console.log(`Client disconnected: ${socket.id}`);
+  });
+});
 
 
 // initAuth(); // Initialize authentication
@@ -79,13 +124,16 @@ app.use(express.static(angularPagePath));
 
 
 // Fallback route to serve the Angular app for any other route
-app.get('*', (req, res) => {
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/socket.io')) {
+    // Let Socket.IO handle it
+    return next();
+  }
   res.sendFile(path.join(angularPagePath, 'index.html'));
 });
 
 
-
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });

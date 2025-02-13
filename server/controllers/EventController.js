@@ -3,6 +3,7 @@ const EventParticipants = require('../models/EventParticipants');
 const JoiningInfos = require('../models/JoiningInfoModel');
 const People = require('../models/PersonModel');
 const {Op,Sequelize} = require('sequelize');
+const socketService = require('../socketService');
 const now = new Date();
 
 // exports.getEvents = async (req, res) => {
@@ -397,6 +398,11 @@ exports.createEvent = async (req, res) => {
 
     // Proceed to create the event
     //const event = await Event.createEvent(name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams, loc, desc);
+    console.log("Event created");
+    const io = socketService.getIO();
+    console.log("Get IO is ok");
+    io.emit('refresh', { message: 'Event created'});
+    console.log("Response emitted");
 
     res.status(201).json(event);
   } catch (error) {
@@ -563,6 +569,8 @@ exports.updateEvent = async (req, res) => {
     // Proceed to update the event
     const updatedEvent = await Event.updateEvent(id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams, loc, desc);
     if (updatedEvent) {
+      const io = socketService.getIO();
+      io.emit('refresh', { message: 'Event updated', eventId: updatedEvent.id });
       res.status(200).json(updatedEvent);
     } else {
       res.status(404).json({ message: 'Event not found' });
@@ -579,7 +587,13 @@ exports.deleteEvent = async (req, res) => {
         
         const event = await Event.findByPk(id);
         const deletedEvent = await Event.deleteEvent(id);
+        console.log("Event: " + deletedEvent);
         if (deletedEvent) {
+            console.log("Event deleted");
+            const io = socketService.getIO();
+            console.log("Get IO is ok")
+            io.emit('refresh', { message: 'Event deleted'});
+            console.log("Response emitted")
             res.status(204).end();
         } else {
             res.status(404).json({ message: 'Event not found' });
@@ -614,6 +628,9 @@ exports.joinEvent = async (req, res) => {
   
       // Add person to the event
       await event.addPerson(personId);
+
+      const io = socketService.getIO();
+      io.emit('refresh', { message: 'Event joined', eventId: event.id, personId: personId });
   
       res.status(200).json({ message: 'Successfully joined the event.' });
     } catch (error) {
@@ -639,6 +656,10 @@ exports.joinEvent = async (req, res) => {
   
       // Remove person from the event
       await event.removePerson(personId);
+
+      const io = socketService.getIO();
+      io.emit('refresh', { message: 'Event left', eventId: event.id, personId: personId });
+  
   
       res.status(200).json({ message: 'Successfully left the event.' });
     } catch (error) {
