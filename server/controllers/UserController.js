@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/UserModel'); 
 const Person = require('../models/PersonModel');
+const sequelize = require('sequelize');
 require('dotenv').config();
 
 const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_here';

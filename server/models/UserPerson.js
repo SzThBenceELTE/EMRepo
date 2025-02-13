@@ -21,10 +21,12 @@ const UserPerson = sequelize.define('UserPerson', {
   
   // Create a user and a person, then link them in the join table
   async function linkUserToPerson(userId, personId) {
+    sequelize.transaction(async (t) => {
     await UserPerson.create({
       userId,
       personId,
-    });
+    }, { transaction: t });
+  });
   }
   
   // Query the relationship

@@ -34,7 +34,10 @@ User.getAll = async () => {
 };
 
 User.createUser = async (name, email, password) => {
-    return await User.create({ name, email, password });
+    sequelize.transaction(async (t) => {
+        return await User.create({ name, email, password },
+                                    {transaction: t});
+    });
 };
 
 User.findById = async (id) => {
@@ -54,21 +57,25 @@ User.findByName = async (name) => {
 
 
 User.updateUser = async (id, name, email) => {
-    const user = await User.findByPk(id);
-    if (user) {
-        user.name = name;
-        user.email = email;
-        return await user.save();
-    }
+    sequelize.transaction(async (t) => {
+        const user = await User.findByPk(id);
+        if (user) {
+            user.name = name;
+            user.email = email;
+            return await user.save({ transaction: t });
+        }
     return null; // User not found
+    });
 };
 
 User.deleteUser = async (id) => {
+    sequelize.transaction(async (t) => {
     const user = await User.findByPk(id);
     if (user) {
         return await user.destroy();
     }
     return null; // User not found
+});
 };
 
 module.exports = User;

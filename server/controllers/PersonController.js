@@ -3,6 +3,7 @@ const Person = require('../models/PersonModel');
 const User = require('../models/UserModel');
 const Team = require('../models/TeamModel');
 const EventParticipants = require('../models/EventParticipants');
+const sequelize = require('sequelize');
 
 exports.getPersons = async (req, res) => {
     try {

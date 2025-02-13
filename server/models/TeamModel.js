@@ -35,25 +35,31 @@ Team.getAll = async () => {
 };
 
 Team.createTeam = async (name) => {
-    return await Team.create({ name });
+    sequelize.transaction(async (t) => {
+    return await Team.create({ name }, { transaction: t });
+});
 };
 
 Team.editTeam = async (id, name) => {
+    sequelize.transaction(async (t) => {
     const team = await Team.findByPk(id);
     if (team) {
         team.name = name;
-        return await team.save();
+        return await team.save({transaction: t});
     }
     return null;
+});
 };
 
 Team.deleteTeam = async (id) => {
+    sequelize.transaction(async (t) => {
     const team = await Team.findByPk(id);
     if (team) {
-        await team.setPeople([]); // Deletes all the member associations first
-        return await team.destroy(); //Then the actual team
+        await team.setPeople([], {transaction: t}); // Deletes all the member associations first
+        return await team.destroy({transaction: t}); //Then the actual team
     }
     return null;
+});
 };
 
 module.exports = Team;

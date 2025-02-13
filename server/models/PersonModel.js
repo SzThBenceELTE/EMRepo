@@ -60,9 +60,12 @@ return await Person.findAll();
 };
 
 Person.createPerson = async (firstName, surname, role, group) => {
-    console.log("Model");
+  console.log("Model");
     console.log(firstName, surname, role, group);
-    return await Person.create({ firstName, surname, role, group });
+  sequelize.transaction(async (t) => {
+    
+    return await Person.create({ firstName, surname, role, group }, {transaction: t});
+  });
 };
 
 Person.findById = async (id) => {
@@ -70,25 +73,29 @@ Person.findById = async (id) => {
 }
 
 Person.updatePerson = async (id, firstName, surname, role, group) => {
+  console.log("Model");
+  console.log(firstName, surname, role, group);
+  transaction(async (t) => {
     const person = await Person.findByPk(id);
-    console.log("Model");
-    console.log(firstName, surname, role, group);
     if (person) {
         person.firstName = firstName;
         person.surname = surname;
         person.role = role;
         person.group = group;
-        return await person.save();
+        return await person.save({ transaction: t });
     }
     return null; // Person not found
+});
 };
 
 Person.deletePerson = async (id) => {
+  sequelize.transaction(async (t) => {
     const person = await Person.findByPk(id);
     if (person) {
-        return await person.destroy();
+        return await person.destroy({transaction: t});
     }
     return null; // Person not found
+} );
 };
 Person.findBySurname = async (surname) => {
     return await Person.findOne({ where: { surname } });

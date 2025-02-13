@@ -1,6 +1,6 @@
 const Team = require('../models/TeamModel');
 const Person = require('../models/PersonModel');
-const Sequelize = require('sequelize');
+const sequelize = require('sequelize');
 
 
 exports.getTeams = async (req, res) => {

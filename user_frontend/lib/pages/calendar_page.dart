@@ -21,10 +21,14 @@ class _CalendarPageState extends State<CalendarPage> {
   @override
   void initState() {
     super.initState();
+    //_initDates();
     _fetchEvents();
   }
 
+
+
   void _fetchEvents() async {
+    
     var events = await EventService.fetchEvents();
     //print("Got events: $events");
     setState(() {
@@ -32,18 +36,21 @@ class _CalendarPageState extends State<CalendarPage> {
         var date = DateTime.parse(event['startDate']);
         date = DateTime(date.year, date.month, date.day);
         //print("Got date $date for event ${event['name']}"); 
-        _events[date] = [event];
+        if (_events[date] == null) {
+          _events[date] = [];
+        }
+        _events[date]?.add(event);
         print("Events for current $date are the following: ${_events[date]}");
       });
     });
   }
 
   List<dynamic> _getEventForDay(DateTime day) {
-    print("Getting events for day $day");
+    //print("Getting events for day $day");
     DateTime formattedDate = DateTime.parse(
         '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
     //print("Normal date: $day");
-    print("Events for day $formattedDate are: ${_events[formattedDate]}");
+    //print("Events for day $formattedDate are: ${_events[formattedDate]}");
     return _events[formattedDate] ?? [];
   }
 
@@ -127,8 +134,9 @@ class _CalendarPageState extends State<CalendarPage> {
                       ),
                       SizedBox(height: 20.0),
                       if (_getEventForDay(_selectedDay).length > 0)
+                      for (var event in _getEventForDay(_selectedDay))
                         EventWidget.fromMap(
-                          _getEventForDay(_selectedDay).first,
+                          event,
                           onStatusChanged: () {
                             setState(() {
                               _fetchEvents();

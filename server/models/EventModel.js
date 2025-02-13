@@ -1,4 +1,4 @@
-const {Op, Sequelize, DataTypes } = require('sequelize');
+const {Op, Sequelize, DataTypes, Transaction } = require('sequelize');
 const sequelize = require('../sequelize'); // Import from sequelize.js
 const EventEnum = require('../enums/EventEnum');
 const now = new Date();
@@ -186,6 +186,7 @@ Event.getAll = async () => {
 
 Event.createEvent = async (name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams, location, description) => {
   try {
+    sequelize.transaction(async (t) => {
     const event = await Event.create({
       name,
       type,
@@ -198,8 +199,9 @@ Event.createEvent = async (name, type, startDate, endDate, maxParticipants, imag
       teams: teams, // Assign teams directly
       location: location || '',
       description: description || '',
-    });
+    }, { transaction: t });
     return event;
+  });
   } catch (error) {
     console.error('Create Event Error:', error);
     throw error;
@@ -208,6 +210,7 @@ Event.createEvent = async (name, type, startDate, endDate, maxParticipants, imag
 
 Event.createEventAlternative = async (name, type, startDate, endDate, maxParticipants, imagePath, parentId, teams, location, description) => {
   try {
+    sequelize.transaction(async (t) => {
     const event = await Event.create({
       name,
       type,
@@ -219,8 +222,9 @@ Event.createEventAlternative = async (name, type, startDate, endDate, maxPartici
       teams: teams, // Assign groups directly
       location: location || '',
       description: description || '',
-    });
+    }, { transaction: t });
     return event;
+  });
   } catch (error) {
     console.error('Create Event Error:', error);
     throw error;
@@ -229,6 +233,7 @@ Event.createEventAlternative = async (name, type, startDate, endDate, maxPartici
 
 Event.createEventFull = async (name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams) => {
   try {
+    sequelize.transaction(async (t) => {
     const event = await Event.create({
       name,
       type,
@@ -239,8 +244,9 @@ Event.createEventFull = async (name, type, startDate, endDate, maxParticipants, 
       parentId: parentId || null,
       groups, // Assign groups directly
       teams, // Assign groups directly
-    });
+    }, { transaction: t });
     return event;
+  });
   } catch (error) {
     console.error('Create Event Error:', error);
     throw error;
@@ -253,6 +259,7 @@ Event.findById = async (id) => {
 };
 
 Event.updateEvent = async (id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams, location, description) => {
+  sequelize.transaction(async (t) => {
   const event = await Event.findByPk(id);
   if (event) {
     event.name = name;
@@ -266,12 +273,14 @@ Event.updateEvent = async (id, name, type, startDate, endDate, maxParticipants, 
     event.teams = teams;
     event.location = location;
     event.description = description;
-    return await event.save();
+    return await event.save({transaction: t});
   }
   return null; // Event not found
+});
 };
 
 Event.updateEventAlternative = async (id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, teams) => {
+  sequelize.transaction(async (t) => {
   const event = await Event.findByPk(id);
   if (event) {
     event.name = name;
@@ -283,12 +292,14 @@ Event.updateEventAlternative = async (id, name, type, startDate, endDate, maxPar
     event.parentId = parentId;
     event.groups = event.groups;  //keep it the same here
     event.teams = teams;
-    return await event.save();
+    return await event.save({transaction: t});
   }
   return null; // Event not found
+});
 };
 
 Event.updateEventFull = async (id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, teams) => {
+  sequelize.transaction(async (t) => {
   const event = await Event.findByPk(id);
   if (event) {
     event.name = name;
@@ -300,17 +311,21 @@ Event.updateEventFull = async (id, name, type, startDate, endDate, maxParticipan
     event.parentId = parentId;
     event.groups = groups;
     event.teams = teams;
-    return await event.save();
+    return await event.save({transaction: t});
   }
   return null; // Event not found
+});
+
 };
 
 Event.deleteEvent = async (id) => {
+  sequelize.transaction(async (t) => {
   const event = await Event.findByPk(id);
   if (event) {
-    return await event.destroy();
+    return await event.destroy({transaction: t});
   }
   return null; // Event not found
+});
 };
 
 module.exports = Event;
