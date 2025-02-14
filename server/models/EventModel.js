@@ -259,7 +259,7 @@ Event.findById = async (id) => {
 };
 
 Event.updateEvent = async (id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams, location, description) => {
-  sequelize.transaction(async (t) => {
+
   const event = await Event.findByPk(id);
   if (event) {
     event.name = name;
@@ -273,10 +273,9 @@ Event.updateEvent = async (id, name, type, startDate, endDate, maxParticipants, 
     event.teams = teams;
     event.location = location;
     event.description = description;
-    return await event.save({transaction: t});
+    return await event.save();
   }
   return null; // Event not found
-});
 };
 
 Event.updateEventAlternative = async (id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, teams) => {
@@ -319,14 +318,14 @@ Event.updateEventFull = async (id, name, type, startDate, endDate, maxParticipan
 };
 
 Event.deleteEvent = async (id) => {
-  sequelize.transaction(async (t) => {
+  //sequelize.transaction(async (t) => {
   const event = await Event.findByPk(id);
   console.log('Event:', event);
   if (event) {
-    return await event.destroy({transaction: t});
+    return await event.destroy();
   }
   return null; // Event not found
-});
+//});
 };
 
 module.exports = Event;

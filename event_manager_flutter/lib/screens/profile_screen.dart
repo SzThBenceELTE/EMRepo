@@ -1,5 +1,6 @@
 // lib/screens/profile_screen.dart
 
+import 'package:event_manager_flutter/screens/eventDetails_screen.dart';
 import 'package:event_manager_flutter/widgets/default_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +9,7 @@ import '../models/person_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/person_provider.dart';
 import '../services/api_service.dart';
-import 'eventDetails_screen.dart';
+import 'package:event_manager_flutter/services/real_time_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -30,17 +31,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Controls whether only upcoming events are shown.
   bool _onlyShowUpcoming = false;
   
-  final ApiService _apiService = ApiService(); // Ensure _baseUrl is set
-  
+  final ApiService _apiService = ApiService();
+
   @override
   void initState() {
     super.initState();
     _loadProfileData();
+    
+    // Subscribe to refresh events from the RealTimeService.
+    // This ensures that whenever a refresh event is emitted from the server,
+    // we reload the profile data.
+    final realTimeService = Provider.of<RealTimeService>(context, listen: false);
+    realTimeService.onRefresh((data) {
+      print('ProfileScreen received refresh event: $data');
+      _loadProfileData();
+    });
   }
   
   Future<void> _loadProfileData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     try {
-      // Load current person from your PersonProvider.
+      print('Loading profile data');
+      
+      // Load current person from PersonProvider.
       final personProvider = Provider.of<PersonProvider>(context, listen: false);
       await personProvider.loadCurrentPerson(context);
       _currentPerson = personProvider.currentPerson;
@@ -53,7 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
       
       // Use the ApiService to get full subscribed event details for the person.
-      // Assume your backend endpoint is e.g., GET /api/events/subscribedEvents/:personId
+      // Adjust the endpoint as necessary.
       final events = await _apiService.getSubscribedEventsForPerson(
         personId: _currentPerson!.id,
         token: token,
@@ -70,29 +86,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _errorMessage = 'Failed to load profile: $error';
         _isLoading = false;
       });
+      print('Error loading profile: $error');
     }
   }
   
   /// Filters the subscribed events based on whether they are upcoming.
-  /// Upcoming is defined as having an endDate after the current time.
   void _applyUpcomingFilter() {
     final now = DateTime.now();
-    
     setState(() {
       if (_onlyShowUpcoming) {
         _filteredSubscribedEvents = _allSubscribedEvents.where((event) {
-          // Convert event.endDate to DateTime (adjust if necessary)
           final eventEndDate = DateTime.parse(event.endDate.toString());
           return eventEndDate.isAfter(now);
         }).toList();
       } else {
-        // If the checkbox is not selected, show all events
         _filteredSubscribedEvents = List.from(_allSubscribedEvents);
       }
     });
   }
   
-  /// A helper function to format a date (this is your own implementation).
+  /// A helper function to format a date.
   String _formatDate(String dateString) {
     try {
       final DateTime date = DateTime.parse(dateString);
@@ -108,6 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: const Text('Profile'),
       ),
+      drawer: const DefaultDrawer(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
@@ -174,7 +188,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     isThreeLine: true,
                                     trailing: const Icon(Icons.keyboard_arrow_right),
                                     onTap: () {
-                                      // Navigate to event details when tapped.
                                       final authProvider = Provider.of<AuthProvider>(context, listen: false);
                                       Navigator.push(
                                         context,
@@ -192,7 +205,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                 ),
-                drawer: const DefaultDrawer(),
     );
   }
 }

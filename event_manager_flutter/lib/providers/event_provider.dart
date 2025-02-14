@@ -7,9 +7,12 @@ import '../models/event_model.dart';
 import '../services/api_service.dart';
 import 'auth_provider.dart';
 import 'person_provider.dart';
+import 'package:event_manager_flutter/services/real_time_service.dart';
+
 
 class EventProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
+  final AuthProvider _authProvider;
   List<EventModel> _events = [];
   List<EventModel> _allEvents = [];
   Set<int> _subscribedEventIds = {};
@@ -19,16 +22,62 @@ class EventProvider with ChangeNotifier {
   List<EventModel> get allEvents => _allEvents;
   Set<int> get subscribedEventIds => _subscribedEventIds;
 
+   // Constructor now takes a RealTimeService instance.
+  EventProvider({required RealTimeService realTimeService, required AuthProvider authProvider})
+   : _authProvider = authProvider {
+    // Subscribe to refresh events from RealTimeService.
+    realTimeService.onRefresh((data) {
+      print('Refresh event received in EventProvider: $data');
+      refreshEvents();
+    });
+  }
 
+  //update event lists, notify listeners
   void setEvents(List<EventModel> events, List<EventModel> allEvents) {
     _events = events;
     _allEvents = allEvents;
     notifyListeners();
   }
 
+  // /// Fetch events using the token and update the provider.
+  // Future<void> loadEvents(BuildContext context) async {
+  //   final authProvider = Provider.of<AuthProvider>(context, listen: false);
+  //   final token = await authProvider.getToken();
+  //   if (token == null) {
+  //     throw Exception('Authentication token not found.');
+  //   }
+
+  //   try {
+  //     final fetchedEvents = await fetchEvents(token);
+  //     final fetchedAllEvents = await fetchAllEvents(token);
+  //     setEvents(fetchedEvents, fetchedAllEvents);
+  //   } catch (error) {
+  //     throw Exception('Failed to load events: $error');
+  //   }
+  // }
+
+  /// Refresh events triggered by a real-time update.
+  Future<void> refreshEvents() async {
+    try {
+      // Here, you need to get the token.
+      // If you have a global way to get it (e.g. via AuthProvider or local storage), use that.
+      // For this example, we assume you have access to a token.
+      String? token = _authProvider.token;
+      if (token == null) {
+        throw Exception('Authentication token not found.');
+      }
+      final fetchedEvents = await fetchEvents(token);
+      final fetchedAllEvents = await fetchAllEvents(token);
+      setEvents(fetchedEvents, fetchedAllEvents);
+      print('Events refreshed successfully.');
+    } catch (error) {
+      print('Error refreshing events: $error');
+    }
+  }
+
   Future<List<EventModel>> fetchEvents(String token) async {
     try {
-      List<EventModel> data = await ApiService().fetchEvents(token);
+      List<EventModel> data = await _apiService.fetchEvents(token);
       print('Fetched Events: $data'); // Optional: For debugging
       return data; // Directly return the mapped EventModel instances
     } catch (error) {
@@ -39,7 +88,7 @@ class EventProvider with ChangeNotifier {
 
   Future<List<EventModel>> fetchAllEvents(String token) async {
     try {
-      List<EventModel> data = await ApiService().fetchAllEvents(token);
+      List<EventModel> data = await _apiService.fetchAllEvents(token);
       print('Fetched Events: $data'); // Optional: For debugging
       return data; // Directly return the mapped EventModel instances
     } catch (error) {
@@ -57,10 +106,10 @@ class EventProvider with ChangeNotifier {
 
     Future<void> joinEvent(BuildContext context, int eventId) async {
     final personProvider = Provider.of<PersonProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    //final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     final personId = personProvider.currentPerson?.id;
-    final token = authProvider.token;
+    final token = _authProvider.token;
 
     print('Token: $token');
     print('Person ID: $personId');
@@ -86,10 +135,10 @@ class EventProvider with ChangeNotifier {
 
   Future<void> leaveEvent(BuildContext context, int eventId) async {
     final personProvider = Provider.of<PersonProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    //final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     final personId = personProvider.currentPerson?.id;
-    final token = authProvider.token;
+    final token = _authProvider.token;
 
     print('Person ID: $personId');
     print('Token: $token');
@@ -118,10 +167,10 @@ class EventProvider with ChangeNotifier {
 
   Future<void> leaveMainEvent(BuildContext context, int eventId, List<EventModel> subEvents) async {
   final personProvider = Provider.of<PersonProvider>(context, listen: false);
-  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+  //final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
   final personId = personProvider.currentPerson?.id;
-  final token = authProvider.token;
+  final token = _authProvider.token;
 
   print('Token: $token');
   print('Person ID: $personId');
@@ -159,8 +208,8 @@ class EventProvider with ChangeNotifier {
 
   /// Loads events by fetching them from the API and setting them in the provider.
   Future<void> loadEvents(BuildContext context) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final token = authProvider.token;
+    //final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = _authProvider.token;
 
     if (token == null) {
       // Handle the case where the token is not available
@@ -204,10 +253,10 @@ class EventProvider with ChangeNotifier {
 
   Future<void> fetchSubscribedEventIds(BuildContext context) async {
     final personProvider = Provider.of<PersonProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    //final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     final personId = personProvider.currentPerson?.id;
-    final token = authProvider.token;
+    final token = _authProvider.token;
 
     if (personId != null && token != null) {
       try {

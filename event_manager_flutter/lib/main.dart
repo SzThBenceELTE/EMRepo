@@ -9,21 +9,24 @@ import 'screens/home_screen.dart';
 import 'screens/events_screen.dart';
 import 'screens/people_screen.dart';
 import 'screens/calendar_screen.dart';
+import 'services/real_time_service.dart';
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final authProvider = AuthProvider();
   await authProvider.loadUserData();
+  final realTimeService = RealTimeService();
 
   
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => PersonProvider()),
-        ChangeNotifierProvider(create: (_) => EventProvider()),
+        ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+        ChangeNotifierProvider(create: (_) => PersonProvider(realTimeService: realTimeService, authProvider: authProvider)),
+        ChangeNotifierProvider(create: (_) => EventProvider(realTimeService: realTimeService, authProvider: authProvider)),
+        Provider<RealTimeService>(create: (_) => RealTimeService()), // Add RealTimeService provider
       ],
       child: EventManagerApp(),
     ),

@@ -76,6 +76,7 @@ app.use(cors(corsOptions));
 
 const server = http.createServer(app);
 const io = socketIo(server, {
+  path: '/io', // Serve the Socket.IO server at /io
   cors: {
     origin: "http://localhost:4200", // Allow requests from your Angular app's origin
     methods: ["GET", "POST"],

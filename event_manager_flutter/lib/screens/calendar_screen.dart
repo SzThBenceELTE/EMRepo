@@ -127,162 +127,176 @@ class _CalendarScreenState extends State<CalendarScreen> {
   List<EventModel> _getEventsForDay(DateTime day) {
     return _events[DateTime(day.year, day.month, day.day)] ?? [];
   }
+
+  Map<DateTime, List<EventModel>> _groupEventsByDate(List<EventModel> events) {
+  final Map<DateTime, List<EventModel>> grouped = {};
+  for (var event in events) {
+    // Normalize the date (remove time)
+    final date = DateTime(event.startDate.year, event.startDate.month, event.startDate.day);
+    if (grouped.containsKey(date)) {
+      grouped[date]!.add(event);
+    } else {
+      grouped[date] = [event];
+    }
+  }
+  return grouped;
+}
   
 
   @override
-  Widget build(BuildContext context) {
-    final eventProvider = Provider.of<EventProvider>(context, listen: true);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final token = authProvider.token;
-    final person = _currentPerson;
-    
+Widget build(BuildContext context) {
+  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+  final token = authProvider.token;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Calendar'),
-      ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            ) :  Column(
-        children: [
-          TableCalendar<EventModel>(
-            firstDay: DateTime.utc(2000, 1, 1),
-            lastDay: DateTime.utc(2100, 12, 31),
-            focusedDay: _focusedDay,
-            selectedDayPredicate: (day) {
-              return isSameDay(_selectedDay, day);
-            },
-            eventLoader: _getEventsForDay,
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDay = selectedDay;
-                _focusedDay = focusedDay;
-              });
-            },
-            calendarFormat: _calendarFormat,
-            onFormatChanged: (format) {
-              setState(() {
-                _calendarFormat = format;
-              });
-            },
-            headerStyle: const HeaderStyle(
-              formatButtonVisible: false,
-            ),
-            calendarStyle: const CalendarStyle(
-              todayDecoration: BoxDecoration(
-                color: Colors.blueAccent,
-                shape: BoxShape.circle,
-              ),
-              selectedDecoration: BoxDecoration(
-                color: Colors.orangeAccent,
-                shape: BoxShape.circle,
-              ),
-            ),
-            calendarBuilders: CalendarBuilders<EventModel>(
-              markerBuilder: (context, date, events) {
-                if (events.isEmpty) return const SizedBox();
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Calendar'),
+    ),
+    body: _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : Consumer<EventProvider>(
+            builder: (context, eventProvider, child) {
+              // Group the events from the provider
+              final eventsMap = _groupEventsByDate(eventProvider.allEvents);
 
-                // Get the EventProvider so we can check subscription status.
-                final eventProvider = Provider.of<EventProvider>(context, listen: false);
+              // Get events for selected day
+              final eventsForSelectedDay = eventsMap[DateTime(
+                    _selectedDay.year,
+                    _selectedDay.month,
+                    _selectedDay.day,
+                  )] ??
+                  [];
 
-                // Create a list of dots (one for each event on this day)
-                return Positioned(
-                  bottom: 1,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: events.map((event) {
-                      // Determine dot color based on subscription status.
-                      // You can customize these colors as needed.
-                      final isPast = event.startDate.isBefore(DateTime.now());
-                      final isSubscribed = eventProvider.subscribedEventIds.contains(event.id);
-                      final dotColor = isSubscribed ? Colors.green :  isPast ? Colors.red : Colors.lightBlue;
-
-                      return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: dotColor,
-                        ),
-                      );
-                    }).toList(),
+              return Column(
+                children: [
+                  TableCalendar<EventModel>(
+                    firstDay: DateTime.utc(2000, 1, 1),
+                    lastDay: DateTime.utc(2100, 12, 31),
+                    focusedDay: _focusedDay,
+                    selectedDayPredicate: (day) {
+                      return isSameDay(_selectedDay, day);
+                    },
+                    // Use the computed eventsMap
+                    eventLoader: (day) {
+                      return eventsMap[DateTime(day.year, day.month, day.day)] ?? [];
+                    },
+                    onDaySelected: (selectedDay, focusedDay) {
+                      setState(() {
+                        _selectedDay = selectedDay;
+                        _focusedDay = focusedDay;
+                      });
+                    },
+                    calendarFormat: _calendarFormat,
+                    onFormatChanged: (format) {
+                      setState(() {
+                        _calendarFormat = format;
+                      });
+                    },
+                    headerStyle: const HeaderStyle(
+                      formatButtonVisible: false,
+                    ),
+                    calendarStyle: const CalendarStyle(
+                      todayDecoration: BoxDecoration(
+                        color: Colors.blueAccent,
+                        shape: BoxShape.circle,
+                      ),
+                      selectedDecoration: BoxDecoration(
+                        color: Colors.orangeAccent,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    calendarBuilders: CalendarBuilders<EventModel>(
+                      markerBuilder: (context, date, events) {
+                        if (events.isEmpty) return const SizedBox();
+                        return Positioned(
+                          bottom: 1,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: events.map((event) {
+                              final isPast = event.startDate.isBefore(DateTime.now());
+                              final isSubscribed = eventProvider.subscribedEventIds.contains(event.id);
+                              final dotColor = isSubscribed
+                                  ? Colors.green
+                                  : isPast
+                                      ? Colors.red
+                                      : Colors.lightBlue;
+                              return Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                                width: 7,
+                                height: 7,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: dotColor,
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                );
-              },
-            ),
+                  const SizedBox(height: 8.0),
+                  // If there are no events for the selected day, show a message
+                  Expanded(
+                    child: eventsForSelectedDay.isEmpty
+                        ? const Center(child: Text('No events for this day'))
+                        : ListView.builder(
+                            itemCount: eventsForSelectedDay.length,
+                            itemBuilder: (context, index) {
+                              final event = eventsForSelectedDay[index];
+                              final name = event.name ?? 'No Name';
+                              final type = event.type ?? 'No Type';
+                              final startDate = _formatDate(event.startDate.toString());
+                              final endDate = _formatDate(event.endDate.toString());
+                              final currentParticipants = event.currentParticipants.toString();
+                              final maxParticipants = event.maxParticipants.toString();
+                              final isSubscribed = eventProvider.subscribedEventIds.contains(event.id);
+                              final subEvents = event.subevents ?? [];
+                              final imagePath = event.imagePath;
+                              print('Event ID: ${event.id}, Name: $name, Image: $imagePath');
+                              return event.startDate.isBefore(DateTime.now())
+                                  ? CardBuilder.createOldCard(
+                                      context: context,
+                                      eventProvider: eventProvider,
+                                      person: _currentPerson,
+                                      token: token,
+                                      event: event,
+                                      name: name,
+                                      type: type,
+                                      startDate: startDate,
+                                      endDate: endDate,
+                                      currentParticipants: currentParticipants,
+                                      maxParticipants: maxParticipants,
+                                      subEvents: subEvents,
+                                      imagePath: imagePath,
+                                      isSubscribed: isSubscribed,
+                                    )
+                                  : CardBuilder.createCard(
+                                      context: context,
+                                      eventProvider: eventProvider,
+                                      person: _currentPerson,
+                                      token: token,
+                                      event: event,
+                                      name: name,
+                                      type: type,
+                                      startDate: startDate,
+                                      endDate: endDate,
+                                      currentParticipants: currentParticipants,
+                                      maxParticipants: maxParticipants,
+                                      subEvents: subEvents,
+                                      imagePath: imagePath,
+                                      isSubscribed: isSubscribed,
+                                    );
+                            },
+                          ),
+                  ),
+                ],
+              );
+            },
           ),
-          const SizedBox(height: 8.0),
-          Expanded(
-            child: _getEventsForDay(_selectedDay).isEmpty
-    ? const Center(child: Text('No events for this day'))
-    : ListView.builder(
-        itemCount: _getEventsForDay(_selectedDay).length,
-        itemBuilder: (context, index) {
-          final event = _getEventsForDay(_selectedDay)[index];
-          final name = event.name ?? 'No Name';
-          final type = event.type ?? 'No Type';
-          final startDate = _formatDate(event.startDate.toString());
-          final endDate = _formatDate(event.endDate.toString());
-          final currentParticipants =
-              event.currentParticipants.toString();
-          final maxParticipants =
-              event.maxParticipants.toString() ?? 'N/A';
-          final isSubscribed =
-              eventProvider.subscribedEventIds.contains(event.id);
-          final subEvents = event.subevents ?? [];
-          final imagePath = event.imagePath;
-          print(imagePath);
-          print('Event ID: ${event.id}, Name: $name, Image: $imagePath');
-          final imageData = event.imageData;
-
-
-          return event.startDate.isBefore(DateTime.now()) ? 
-            CardBuilder.createOldCard(
-                              context: context,
-                              eventProvider: eventProvider,
-                              person: person,
-                              token: token,
-                              event: event,
-                              name: name,
-                              type: type,
-                              startDate: startDate,
-                              endDate: endDate,
-                              currentParticipants: currentParticipants,
-                              maxParticipants: maxParticipants,
-                              subEvents: subEvents,
-                              imagePath: imagePath,
-                              isSubscribed: isSubscribed,
-                            ) : 
-            CardBuilder.createCard(
-                              context: context,
-                              eventProvider: eventProvider,
-                              person: person,
-                              token: token,
-                              event: event,
-                              name: name,
-                              type: type,
-                              startDate: startDate,
-                              endDate: endDate,
-                              currentParticipants: currentParticipants,
-                              maxParticipants: maxParticipants,
-                              subEvents: subEvents,
-                              imagePath: imagePath,
-                              isSubscribed: isSubscribed,
-                            );
-                            
-          
-        },
-      ),
-          ),
-        ],
-      ),
-      drawer: const DefaultDrawer(),
-    );
-    
-  }
-
+    drawer: const DefaultDrawer(),
+  );
+}
  
 
   /// Helper method to format date strings

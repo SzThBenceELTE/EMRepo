@@ -4,6 +4,7 @@ const User = require('../models/UserModel');
 const Team = require('../models/TeamModel');
 const EventParticipants = require('../models/EventParticipants');
 const sequelize = require('sequelize');
+const socketService = require('../socketService');
 
 exports.getPersons = async (req, res) => {
     try {
@@ -79,7 +80,7 @@ exports.createPerson = async (req, res) => {
         console.log(firstName, surname, role, group);
         const newPerson = await Person.createPerson(firstName, surname, role, group);
 
-        const io = socketService.getIo();
+        const io = socketService.getIO();
         io.emit('refresh', { message: 'Person created', personId: newPerson.id });
 
         res.status(201).json(newPerson);
@@ -113,7 +114,7 @@ exports.updatePerson = async (req, res) => {
     try {
         const updatedPerson = await Person.updatePerson(id, firstName, surname, role, group);
         if (updatedPerson) {
-            const io = socketService.getIo();
+            const io = socketService.getIO();
             io.emit('refresh', { message: 'Person updated', personId: updatedPerson.id });
             res.status(200).json(updatedPerson);
         } else {
@@ -151,7 +152,7 @@ exports.deletePerson = async (req, res) => {
     
         console.log(`Person with ID: ${id} and associated User deleted successfully.`);
 
-        const io = socketService.getIo();
+        const io = socketService.getIO();
         io.emit('refresh', { message: 'Person deleted' });
 
         res.status(204).end();

@@ -14,8 +14,14 @@ class AuthProvider with ChangeNotifier {
   UserModel? _currentUser;
   String? _token;
 
-  UserModel? get currentUser => _currentUser;
-  String? get token => _token;
+  UserModel? get currentUser {
+    print("Returning user: $_currentUser");
+    return _currentUser;
+  }
+  String? get token {
+    print("Returning token: $_token");
+    return _token;
+}
 
   Future<void> loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -34,6 +40,9 @@ class AuthProvider with ChangeNotifier {
       print('Logged in: ${response.user}');
       _currentUser = response.user;
       _token = response.token;
+
+      print('Token: $_token');
+      print('User: $_currentUser');
 
       // Store token and user data securely
       final prefs = await SharedPreferences.getInstance();
@@ -66,5 +75,13 @@ class AuthProvider with ChangeNotifier {
       _currentUser = UserModel.fromJson(jsonDecode(userData));
       notifyListeners();
     }
+  }
+
+  Future<UserModel?> getCurrentUser() async {
+    return _currentUser;
+  }
+
+  Future<String?> getToken() async {
+    return token;
   }
 }

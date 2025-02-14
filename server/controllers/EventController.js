@@ -587,8 +587,8 @@ exports.deleteEvent = async (req, res) => {
         
         const event = await Event.findByPk(id);
         const deletedEvent = await Event.deleteEvent(id);
-        console.log("Event: " + deletedEvent);
-        if (deletedEvent) {
+        //console.log("Event: " + deletedEvent);
+        if (event) {
             console.log("Event deleted");
             const io = socketService.getIO();
             console.log("Get IO is ok")

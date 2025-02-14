@@ -1,3 +1,6 @@
+// lib/screens/people_screen.dart
+import 'package:event_manager_flutter/screens/login_screen.dart';
+import 'package:event_manager_flutter/widgets/default_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -14,39 +17,38 @@ class _PeopleScreenState extends State<PeopleScreen> {
   @override
   void initState() {
     super.initState();
-    _loadEvents();
+    _loadPeople();
   }
 
-  Future<void> _loadEvents() async {
+  Future<void> _loadPeople() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final personProvider = Provider.of<PersonProvider>(context, listen: false);
     final token = authProvider.token;
 
     if (token != null) {
-      await personProvider.loadEvents(token);
+      await personProvider.loadPeople(token);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final personProvider = Provider.of<PersonProvider>(context);
-
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('People'),
       ),
-      body: personProvider.events.isEmpty
+      body: personProvider.people.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
-              itemCount: personProvider.events.length,
+              itemCount: personProvider.people.length,
               itemBuilder: (context, index) {
-                
-                final event = personProvider.events[index];
-                final firstName = event['firstName'] ?? '';
-                final surname = event['surname'] ?? '';
-                final role = event['role'] ?? 'Unknown Role';
-                final group = event['group'] ?? 'No Group';
-                 return Card(
+                final person = personProvider.people[index];
+                final firstName = person['firstName'] ?? '';
+                final surname = person['surname'] ?? '';
+                final role = person['role'] ?? 'Unknown Role';
+                final group = person['group'] ?? 'No Group';
+                return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   elevation: 3,
                   child: Padding(
@@ -56,7 +58,8 @@ class _PeopleScreenState extends State<PeopleScreen> {
                       children: [
                         Text(
                           '$firstName $surname',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 6),
                         Text('Role: $role'),
@@ -67,6 +70,18 @@ class _PeopleScreenState extends State<PeopleScreen> {
                 );
               },
             ),
+      // Example logout button, if needed:
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Provider.of<AuthProvider>(context, listen: false).logout();
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        },
+        child: const Icon(Icons.logout),
+      ),
+      drawer: const DefaultDrawer(),
     );
   }
 }

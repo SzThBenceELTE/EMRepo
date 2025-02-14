@@ -1,6 +1,7 @@
 const Team = require('../models/TeamModel');
 const Person = require('../models/PersonModel');
 const sequelize = require('sequelize');
+const socketService = require('../socketService');
 
 
 exports.getTeams = async (req, res) => {
@@ -41,7 +42,7 @@ exports.createTeam = async (req, res)  => {
         const { name } = req.body;
         const newTeam = await Team.createTeam(name);
 
-        const io = socketService.getIo();
+        const io = socketService.getIO();
         io.emit('refresh', { message: 'Team created' });
 
         res.status(201).json(newTeam);
@@ -79,7 +80,7 @@ exports.deleteTeam = async (req,res) => {
         }
         const deletedTeam = await Team.deleteTeam(id);
         if (deletedTeam) {
-            const io = socketService.getIo();
+            const io = socketService.getIO();
             io.emit('refresh', { message: 'Team deleted', teamId: deletedTeam.id });
             res.status(200).json(deletedTeam);
         } else {
@@ -113,7 +114,7 @@ exports.addPersonToTeam = async (req, res) => {
       // Add the person to the team using the association method
       await team.addPerson(person);
 
-      const io = socketService.getIo();
+      const io = socketService.getIO();
       io.emit('refresh', { message: 'Person added', personId: person.id, teamId: team.id });
   
       res.status(200).json({ message: 'Person added to team successfully.' });
@@ -144,7 +145,7 @@ exports.addPersonToTeam = async (req, res) => {
       // Remove the person from the team using the association method
       await team.removePerson(person);
 
-      const io = socketService.getIo();
+      const io = socketService.getIO();
       io.emit('refresh', { message: 'Person removed', personId: person.id, teamId: team.id });
   
   
@@ -186,7 +187,7 @@ exports.addUsersToTeam = async (req, res) => {
       // Here we use addPeople to add multiple persons at once.
       await team.addPeople(persons);
   
-      const io = socketService.getIo();
+      const io = socketService.getIO();
       io.emit('refresh', { message: 'Team joined', personId: persons, teamId: team.id });
 
 
@@ -226,7 +227,7 @@ exports.addUsersToTeam = async (req, res) => {
       // Sequelize automatically creates a helper method "removePeople" on the team instance.
       await team.removePeople(persons);
 
-      const io = socketService.getIo();
+      const io = socketService.getIO();
       io.emit('refresh', { message: 'Team left', personId: persons, teamId: team.id });
   
       return res.status(200).json({ message: 'Users removed from team successfully.' });

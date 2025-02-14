@@ -325,7 +325,7 @@ class CardBuilder {
                                                 MaterialPageRoute(
                                                   builder: (context) =>
                                                       EventDetailsScreen(
-                                                          event: event,
+                                                          event: subEvent,
                                                           token: token!),
                                                 ),
                                               );

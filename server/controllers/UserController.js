@@ -67,8 +67,10 @@ exports.createUser = async (req, res) => {
       await newUser.setPerson(newPerson); // Associate the person with the user
       console.log('newUser:', newPerson);
 
-      const io = socketService.getIo();
+      const io = socketService.getIO();
+      console.log('io:', io);
       io.emit('refresh', { message: 'User created' });
+      console.log("message emmited");
 
       res.status(201).json({ user: newUser, person: newPerson });
     } catch (error) {
@@ -129,7 +131,7 @@ exports.updateUser = async (req, res) => {
     try {
         const updatedUser = await User.updateUser(id, name, email);
         if (updatedUser) {
-          const io = socketService.getIo();
+          const io = socketService.getIO();
           io.emit('refresh', { message: 'User updated', userId: updatedUser.id });
             res.status(200).json(updatedUser);
         } else {
@@ -146,7 +148,7 @@ exports.deleteUser = async (req, res) => {
     try {
         const deletedUser = await User.deleteUser(id);
         if (deletedUser) {
-          const io = socketService.getIo();
+          const io = socketService.getIO();
           io.emit('refresh', { message: 'User deleted', userId: deletedUser.id });
             res.status(204).send(); // No content to send back
         } else {

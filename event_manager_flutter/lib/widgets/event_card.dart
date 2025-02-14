@@ -360,7 +360,7 @@ class EventCard extends StatelessWidget {
                                                   MaterialPageRoute(
                                                     builder: (context) =>
                                                         EventDetailsScreen(
-                                                            event: event,
+                                                            event: subEvent,
                                                             token: token!),
                                                   ),
                                                 );
@@ -382,6 +382,7 @@ class EventCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                  ),
                   ],
                 ],
               ),
