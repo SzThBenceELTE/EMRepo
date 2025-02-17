@@ -52,8 +52,6 @@ const Person = sequelize.define(
     },
   );
 
-// Person.belongsTo(User, { foreignKey: 'userId', allowNull: false });
-// User.hasOne(Person, { foreignKey: 'userId' });
 
 Person.getAll = async () => {
 return await Person.findAll();

@@ -27,22 +27,6 @@ const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());  // Middleware to parse JSON bodies
 
-// // Websocket server
-// const sockserver = new WebSocketServer({ port: 443});
-// sockserver.on('connection', ws => {
-//   console.log('New client connected!')
-//   ws.send('connection established')
-//   ws.on('close', () => console.log('Client has disconnected!'))
-//   ws.on('message', data => {
-//     sockserver.clients.forEach(client => {
-//       console.log(`distributing message: ${data}`)
-//       client.send(`${data}`)
-//     })
-//   })
-//   ws.onerror = function () {
-//     console.log('websocket error')
-//   }
-// })
 
 
 
@@ -96,15 +80,6 @@ io.on('connection', (socket) => {
 });
 
 
-// initAuth(); // Initialize authentication
-// app.use(session({
-//   secret: 'secret',
-//   saveUninitialized: true,
-//   resave: true
-// }));
-// app.use(passport.initialize());
-// app.use(passport.session());
-
 
 // API Routes
 //console.log('Serving events from:', path.join(__dirname, 'uploads', 'events'));
@@ -138,3 +113,5 @@ const port = process.env.PORT || 3000;
 server.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+module.exports = app; // Export the app for testing

@@ -1,0 +1,12 @@
+{
+    "name": "my-app-tests",
+    "version": "1.0.0",
+    "scripts": {
+      "test": "cross-env NODE_ENV=test jest --verbose --runInBand"
+    },
+    "devDependencies": {
+      "jest": "^29.0.0",
+      "supertest": "^6.0.0",
+      "sequelize-mock": "^0.8.0"
+    }
+  }

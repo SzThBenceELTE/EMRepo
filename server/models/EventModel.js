@@ -95,36 +95,6 @@ const Event = sequelize.define(
 
 
 
-// Event.getAll = async () => {
-//   return await Event.findAll({
-//     where: { parentId: null }, // Fetch only main events
-//       include: [
-//         {
-//           model: Event,
-//           as: 'subevents',
-//           include: [
-//             {
-//               model: Event,
-//               as: 'subevents', // Include nested subevents if needed
-//             },
-//           ],
-//         },
-//       ],
-//     attributes: {
-//       include: [
-//         [
-//           // Use a subquery to count participants
-//           Sequelize.literal(`(
-//             SELECT COUNT(*)
-//             FROM EventParticipants AS ep
-//             WHERE ep.EventId = Event.id
-//           )`),
-//           'currentParticipants',
-//         ],
-//       ],
-//     },
-//   });;
-// };
 
 Event.getAll = async () => {
   return await Event.findAll({

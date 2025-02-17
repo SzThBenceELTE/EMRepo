@@ -3,12 +3,6 @@ const sequelize = require('../sequelize'); // Import from sequelize.js
 const now = new Date();
 const Person = require('./PersonModel');
 
-/*
-What we need:
-    Teams with name and id
-    People associated with the team - based on Person Id
-    Also need an event association, altough I'd put that in EventModel
-*/
 
 const Team = sequelize.define(
     'Team',
