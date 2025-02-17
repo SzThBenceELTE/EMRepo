@@ -81,26 +81,36 @@ exports.editTeam = async (req, res) => {
     }
 };
 
-exports.deleteTeam = async (req,res) => {
-    const { id } = req.params;
-    try{
-      const team = await Team.findByPk(id);
-        if (!team) {
-          return res.status(404).json({ message: 'Team not found' });
-        }
-        const deletedTeam = await Team.deleteTeam(id);
-        if (deletedTeam) {
-            const io = socketService.getIO();
-            io.emit('refresh', { message: 'Team deleted', teamId: deletedTeam.id });
-            res.status(200).json(deletedTeam);
-        } else {
-            res.status(404).json({ message: 'Team not found' });
-        }
+exports.deleteTeam = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Find the team to delete
+    const team = await Team.findByPk(id);
+    if (!team) {
+      return res.status(404).json({ message: 'Team not found' });
     }
-    catch(error){
-        console.error(error);
-        res.status(500).json({ message: 'Error deleting team' });
+    
+    // Clear associations for team members (Persons)
+    // This uses the alias "Members" (adjust if you named it differently)
+    await team.setMembers([]);
+    
+    // Clear associations for team events, if defined (using alias "TeamEvents")
+    if (typeof team.setTeamEvents === 'function') {
+      await team.setTeamEvents([]);
     }
+    
+    // Now delete the team record
+    await team.destroy();
+    
+    // Emit a refresh event to notify connected clients
+    const io = socketService.getIO();
+    io.emit('refresh', { message: 'Team deleted', teamId: id });
+    
+    res.status(200).json(team);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error deleting team' });
+  }
 };
 
 /*

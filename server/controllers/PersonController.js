@@ -209,31 +209,37 @@ exports.deletePerson = async (req, res) => {
     console.log(`Deleting person with ID: ${id}`);
     
     try {
-        const personToDelete = await Person.findByPk(id);
-
-        const userIdToDelete = personToDelete.UserId;
-        console.log(`Deleting user with ID: ${userIdToDelete}`);
-        const userToDelete = await User.findByPk(userIdToDelete);
-
-        if (!personToDelete) {
-            return res.status(404).json({ message: 'Person not found' });
-        }
-
-        if (!userToDelete) {
-            console.log(`User with ID: ${userIdToDelete} not found.`);
-        }
-    
-        // Delete the person (this will cascade delete the associated user)
-        await personToDelete.destroy();
+      // Find the person to delete
+      const personToDelete = await Person.findByPk(id);
+      if (!personToDelete) {
+        return res.status(404).json({ message: 'Person not found' });
+      }
+  
+      // Remove associations in the TeamMembers join table.
+      // This assumes you have set up the belongsToMany association so that Person has a setTeams method.
+      await personToDelete.setTeams([]);
+  
+      // Retrieve the associated user via the foreign key UserId
+      const userIdToDelete = personToDelete.UserId;
+      console.log(`Deleting user with ID: ${userIdToDelete}`);
+      const userToDelete = await User.findByPk(userIdToDelete);
+      if (!userToDelete) {
+        console.log(`User with ID: ${userIdToDelete} not found.`);
+      }
+  
+      // Delete the person record
+      await personToDelete.destroy();
+      // Delete the associated user record if found
+      if (userToDelete) {
         await userToDelete.destroy();
-        
-    
-        console.log(`Person with ID: ${id} and associated User deleted successfully.`);
-
-        const io = socketService.getIO();
-        io.emit('refresh', { message: 'Person deleted' });
-
-        res.status(204).end();
+      }
+      
+      console.log(`Person with ID: ${id} and associated User deleted successfully.`);
+      
+      const io = socketService.getIO();
+      io.emit('refresh', { message: 'Person deleted' });
+      
+      res.status(204).end();
     } catch (error) {
       console.error('Error deleting person:', error);
       res.status(500).json({ message: 'Error deleting person' });
