@@ -4,6 +4,10 @@ const sequelize = require('sequelize');
 const socketService = require('../socketService');
 
 
+/*
+  Getters for Teams
+*/
+
 exports.getTeams = async (req, res) => {
     try{
         const teams = await Team.getAll();
@@ -37,6 +41,10 @@ exports.getMembers = async (req, res) => {
     }
 }
 
+/*
+  Team manipulation
+*/
+
 exports.createTeam = async (req, res)  => {
     try{
         const { name } = req.body;
@@ -59,6 +67,8 @@ exports.editTeam = async (req, res) => {
     try{
         const updatedTeam = await Team.editTeam(id, name);
         if (updatedTeam) {
+          const io = socketService.getIO();
+          io.emit('refresh', { message: 'Team edited', teamId: updatedTeam.id });
             res.status(200).json(updatedTeam);
         } else {
             res.status(404).json({ message: 'Team not found' });
@@ -92,6 +102,10 @@ exports.deleteTeam = async (req,res) => {
         res.status(500).json({ message: 'Error deleting team' });
     }
 };
+
+/*
+  Adding and Removing team members, both single and batch
+*/
 
 exports.addPersonToTeam = async (req, res) => {
     const { teamId, personId } = req.params; // Ensure your request includes these values

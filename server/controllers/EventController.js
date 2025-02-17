@@ -6,32 +6,215 @@ const {Op,Sequelize} = require('sequelize');
 const socketService = require('../socketService');
 const now = new Date();
 
-// exports.getEvents = async (req, res) => {
-//   try {
-//     // const role = req.user.Person.role;
-//     // const userGroup = req.user.Person.group;
 
-//     console.log('req: ', req);
+/*
+    Subscription checkers
+*/
 
-//     let events = await Event.getAll();
+// Check if a person is subscribed to an event
+exports.isPersonSubscribedToEvent = async (req, res) => {
+  const { eventId, personId } = req.body;
 
-//     // if (role === 'DEVELOPER' && userGroup) {
-//     //   // Filter events to include only those assigned to the developer's group
-//     //   events = events.filter(event => {
-//     //     const eventGroups = event.Groups.map(group => group.name);
-//     //     const subeventGroups = event.subevents.flatMap(sub => sub.Groups.map(group => group.name));
-//     //     const allGroups = [...eventGroups, ...subeventGroups];
-//     //     return allGroups.includes(userGroup);
-//     //   });
-//     // }
+  try {
+    const event = await Event.findByPk(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found.' });
+    }
 
-//     res.status(200).json(events);
-//   } catch (error) {
-//     console.error('Get Events Error:', error);
-//     res.status(500).json({ message: 'Error retrieving events' });
-//   }
-// };
+    // Check if the person is a participant
+    const isParticipant = await event.hasPerson(personId);
 
+    res.status(200).json({ subscribed: isParticipant });
+  } catch (error) {
+    console.error('Check Subscription Error:', error);
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
+exports.getSubscribedUsers = async (req, res) => {
+  // Get the eventId from the request (could be in req.body or as a URL parameter)
+  const eventId = req.params.eventId; // Or req.params.eventId if using URL parameters
+
+  try {
+    // Find the event by primary key
+    const event = await Event.findByPk(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found.' });
+    }
+
+    // Fetch all people, that participate
+    const subscribedUsers = await event.getPeople();
+
+    // Optionally, you can format the users or filter fields before sending
+    res.status(200).json({ 
+      subscribedUsers: subscribedUsers 
+    });
+  } catch (error) {
+    console.error('Error fetching subscribed users:', error);
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
+
+exports.getSubscribedEventsForPerson = async (req, res) => {
+  const { personId } = req.params;
+  console.log('Fetching subscribed events for personId:', personId);
+
+  try {
+    // Fetch all event subscription records for the person
+    const subscriptions = await EventParticipants.findAll({
+      where: { personId: personId },
+      attributes: ['eventId'],
+    });
+
+    // Get only the Id-s of events subscribed
+    const eventIds = subscriptions.map(sub => sub.eventId);
+    console.log('Subscribed Event IDs:', eventIds);
+
+    // If there are no subscribed events, return an empty array
+    if (eventIds.length === 0) {
+      return res.status(200).json({ subscribedEvents: [] });
+    }
+
+    // Fetch the full event details corresponding to these IDs.
+    // You can include associations (such as subevents, participant counts, etc.)
+    const events = await Event.findAll({
+      where: {
+        id: {
+          [Op.in]: eventIds,
+        },
+      },
+      // Example: Include subevents and current participant counts if needed
+      attributes: {
+        include: [
+          [
+            Sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM "EventParticipants" AS ep
+              WHERE ep."EventId" = "Event"."id"
+            )`),
+            'currentParticipants',
+          ],
+        ],
+      },
+      include: [
+        {
+          model: Event,
+          as: 'subevents',
+          attributes: {
+            include: [
+              [
+                Sequelize.literal(`(
+                  SELECT COUNT(*)
+                  FROM "EventParticipants" AS ep
+                  WHERE ep."EventId" = "subevents"."id"
+                )`),
+                'currentParticipants',
+              ],
+            ],
+          },
+          include: [
+            {
+              model: Event,
+              as: 'subevents', // Nested subevents
+              attributes: {
+                include: [
+                  [
+                    Sequelize.literal(`(
+                      SELECT COUNT(*)
+                      FROM "EventParticipants" AS ep
+                      WHERE ep."EventId" = "subevents->subevents"."id"
+                    )`),
+                    'currentParticipants',
+                  ],
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    res.status(200).json({ subscribedEvents: events });
+  } catch (error) {
+    console.error('Error fetching subscribed events:', error);
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
+
+
+/*
+  Event Getter section
+*/
+
+
+exports.getEvents = async (req, res) => {
+  try {
+    const events = await Event.findAll({
+      where: { 
+        parentId: null,
+        startDate: { [Op.gte]: now }, // Only events that haven't started yet
+      }, // Fetch only main events
+      attributes: {
+        include: [
+          [
+            // Count participants for main events
+            Sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM EventParticipants AS ep
+              WHERE ep.EventId = "Event"."id"
+            )`),
+            'currentParticipants',
+          ],
+        ],
+      },
+      include: [
+        {
+          model: Event,
+          as: 'subevents',
+          attributes: {
+            include: [
+              [
+                // Count participants for first-level subevents
+                Sequelize.literal(`(
+                  SELECT COUNT(*)
+                  FROM EventParticipants AS ep
+                  WHERE ep.EventId = "subevents"."id"
+                )`),
+                'currentParticipants',
+              ],
+            ],
+          },
+          include: [
+            {
+              model: Event,
+              as: 'subevents', // Nested subevents
+              attributes: {
+                include: [
+                  [
+                    // Count participants for second-level subevents
+                    Sequelize.literal(`(
+                      SELECT COUNT(*)
+                      FROM EventParticipants AS ep
+                      WHERE ep.EventId = "subevents->subevents"."id"
+                    )`),
+                    'currentParticipants',
+                  ],
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    res.status(200).json(events);
+  } catch (error) {
+    console.error('Get Events Error:', error);
+    res.status(500).json({ message: 'Error retrieving events' });
+  }
+};
 
 
 exports.getAllEvents = async (req, res) => {
@@ -227,189 +410,6 @@ exports.getAllAndPastMainEvents = async (req, res) => {
   }
 };
 
-exports.getEvents = async (req, res) => {
-  try {
-    const events = await Event.findAll({
-      where: { 
-        parentId: null,
-        startDate: { [Op.gte]: now }, // Only events that haven't started yet
-      }, // Fetch only main events
-      attributes: {
-        include: [
-          [
-            // Count participants for main events
-            Sequelize.literal(`(
-              SELECT COUNT(*)
-              FROM EventParticipants AS ep
-              WHERE ep.EventId = "Event"."id"
-            )`),
-            'currentParticipants',
-          ],
-        ],
-      },
-      include: [
-        {
-          model: Event,
-          as: 'subevents',
-          attributes: {
-            include: [
-              [
-                // Count participants for first-level subevents
-                Sequelize.literal(`(
-                  SELECT COUNT(*)
-                  FROM EventParticipants AS ep
-                  WHERE ep.EventId = "subevents"."id"
-                )`),
-                'currentParticipants',
-              ],
-            ],
-          },
-          include: [
-            {
-              model: Event,
-              as: 'subevents', // Nested subevents
-              attributes: {
-                include: [
-                  [
-                    // Count participants for second-level subevents
-                    Sequelize.literal(`(
-                      SELECT COUNT(*)
-                      FROM EventParticipants AS ep
-                      WHERE ep.EventId = "subevents->subevents"."id"
-                    )`),
-                    'currentParticipants',
-                  ],
-                ],
-              },
-            },
-          ],
-        },
-      ],
-    });
-
-    res.status(200).json(events);
-  } catch (error) {
-    console.error('Get Events Error:', error);
-    res.status(500).json({ message: 'Error retrieving events' });
-  }
-};
-
-exports.createEvent = async (req, res) => {
-  const { name, type, startDate, endDate, maxParticipants, parentId, location, description } = req.body;
-  console.log("Request Body: " + JSON.stringify(req.body));
-  console.log("Request File: " + JSON.stringify(req.file));
-
-
-  let loc = location ? location : null;
-  let desc = description ? description : null;
-  
- 
-
-  let groups = req.body.groups;
-  
-  if (!Array.isArray(groups)) {
-    if (groups) {
-      groups = [groups];
-    } else {
-      groups = [];
-    }
-  }
-
-  let teams = req.body.teams;
-  console.log("Teams: " + teams);
-
-  if (!Array.isArray(teams)) {
-    if (teams) {
-      teams = [teams];
-    } else {
-      teams = [];
-    }
-  }
-  
-
-  try {
-    // If it's a subevent (parentId is provided), fetch the main event
-    console.log("Parent ID: " + parentId);
-    if (parentId && parentId != '' && parentId != null && parentId != undefined) {
-      console.log("Went into subevent")
-      const mainEvent = await Event.findByPk(parentId);
-      console.log("Main Event: " + mainEvent);
-      if (!mainEvent) {
-        return res.status(404).json({ message: 'Main event not found.' });
-      }
-
-      // Validate maxParticipants
-      if (maxParticipants > mainEvent.maxParticipants) {
-        return res.status(400).json({
-          message: 'Subevent cannot have more participants than the main event.',
-        });
-      }
-
-      // Validate start date and end date
-      const mainEventStartDate = new Date(mainEvent.startDate);
-      const subEventStartDate = new Date(startDate);
-
-      console.log("Main Event date: " + mainEventStartDate);
-      console.log("Sub Event date: " + subEventStartDate);
-
-      if (subEventStartDate < mainEventStartDate) {
-        return res.status(400).json({
-          message: 'Subevent cannot start before the main event ends.',
-        });
-      }
-
-      const mainEventEndDate = new Date(mainEvent.endDate);
-
-      const twoHoursAfterMainEvent = new Date(mainEventEndDate.getTime() + 2 * 60 * 60 * 1000); // Add 2 hours
-      console.log("2 hour cutoff: " + twoHoursAfterMainEvent);
-
-      if (subEventStartDate > twoHoursAfterMainEvent) {
-        return res.status(400).json({
-          message: 'Subevent must start no later than 2 hours after the main event ends.',
-        });
-      }
-
-      // **New Validation: Subevent Groups**
-      const mainEventGroups = mainEvent.groups; // Array of group names
-      const subEventGroups = groups || []; // Subevent groups from request
-
-      // Ensure all subEventGroups are in mainEventGroups
-      const invalidGroups = subEventGroups.filter(group => !mainEventGroups.includes(group));
-      console.log("Invalid Groups: " + invalidGroups);
-
-      if (invalidGroups.length > 0) {
-        return res.status(400).json({
-          message: `Invalid group(s) for subevent: ${invalidGroups.join(', ')}. Subevent groups must be a subset of the main event's groups.`,
-        });
-      }
-
-      
-
-    }
-
-    let imagePath = null;
-    if (req.file) {
-      imagePath = req.file.path;
-    }
-
-    //this needs fixing2
-    console.log("Sending: " + name + " " + type + " " + startDate + " " + endDate + " " + maxParticipants + " " + imagePath + " " + parentId + " " + groups + " " + teams + " " + loc + " " + desc);
-    const event = await Event.createEvent(name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams, loc, desc);
-
-    // Proceed to create the event
-    //const event = await Event.createEvent(name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams, loc, desc);
-    console.log("Event created");
-    const io = socketService.getIO();
-    console.log("Get IO is ok");
-    io.emit('refresh', { message: 'Event created'});
-    console.log("Response emitted");
-
-    res.status(201).json(event);
-  } catch (error) {
-    console.error('Create Event Error:', error);
-    res.status(500).json({ message: 'Error creating event' });
-  }
-};
 
 exports.getEventById = async (req, res) => {
   const { id } = req.params;
@@ -475,6 +475,198 @@ exports.getEventById = async (req, res) => {
     res.status(500).json({ message: 'Error retrieving event' });
   }
 };
+
+exports.getEventsForDate = async (req, res) => {
+  const date = req.params.date;
+  try {
+    const events = await Event.findAll({
+      where: { 
+        parentId: null,
+        //startDate: { [Op.gte]: now }, // Only events that haven't started yet
+        startDate: { [Op.eq]: req.params.date }, // Only events that happen today
+      }, // Fetch only main events
+      attributes: {
+        include: [
+          [
+            // Count participants for main events
+            Sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM EventParticipants AS ep
+              WHERE ep.EventId = "Event"."id"
+            )`),
+            'currentParticipants',
+          ],
+        ],
+      },
+      include: [
+        {
+          model: Event,
+          as: 'subevents',
+          attributes: {
+            include: [
+              [
+                // Count participants for first-level subevents
+                Sequelize.literal(`(
+                  SELECT COUNT(*)
+                  FROM EventParticipants AS ep
+                  WHERE ep.EventId = "subevents"."id"
+                )`),
+                'currentParticipants',
+              ],
+            ],
+          },
+          include: [
+            {
+              model: Event,
+              as: 'subevents', // Nested subevents
+              attributes: {
+                include: [
+                  [
+                    // Count participants for second-level subevents
+                    Sequelize.literal(`(
+                      SELECT COUNT(*)
+                      FROM EventParticipants AS ep
+                      WHERE ep.EventId = "subevents->subevents"."id"
+                    )`),
+                    'currentParticipants',
+                  ],
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    res.status(200).json(events);
+  } catch (error) {
+    console.error('Get Events Error:', error);
+    res.status(500).json({ message: 'Error retrieving events' });
+  }
+}
+
+/* 
+  Event Manipulation
+*/
+
+
+
+
+exports.createEvent = async (req, res) => {
+  const { name, type, startDate, endDate, maxParticipants, parentId, location, description } = req.body;
+  console.log("Request Body: " + JSON.stringify(req.body));
+  console.log("Request File: " + JSON.stringify(req.file));
+
+  // Give default values if not provided
+  let loc = location ? location : null;
+  let desc = description ? description : null;
+  
+ 
+  // Group choice
+  let groups = req.body.groups;
+  
+  if (!Array.isArray(groups)) {
+    if (groups) {
+      groups = [groups];
+    } else {
+      groups = [];
+    }
+  }
+
+  //Team choice
+  let teams = req.body.teams;
+
+  if (!Array.isArray(teams)) {
+    if (teams) {
+      teams = [teams];
+    } else {
+      teams = [];
+    }
+  }
+  
+
+  try {
+    // If it's a subevent (parentId is provided), fetch the main event
+    console.log("Parent ID: " + parentId);
+    if (parentId && parentId != '' && parentId != null && parentId != undefined) {
+      console.log("Went into subevent")
+      const mainEvent = await Event.findByPk(parentId);
+      console.log("Main Event: " + mainEvent);
+      if (!mainEvent) {
+        return res.status(404).json({ message: 'Main event not found.' });
+      }
+
+      // Validate maxParticipants for subevent
+      if (maxParticipants > mainEvent.maxParticipants) {
+        return res.status(400).json({
+          message: 'Subevent cannot have more participants than the main event.',
+        });
+      }
+
+      // Validate start date and end date
+      const mainEventStartDate = new Date(mainEvent.startDate);
+      const subEventStartDate = new Date(startDate);
+
+      // console.log("Main Event date: " + mainEventStartDate);
+      // console.log("Sub Event date: " + subEventStartDate);
+
+      if (subEventStartDate < mainEventStartDate) {
+        return res.status(400).json({
+          message: 'Subevent cannot start before the main event ends.',
+        });
+      }
+
+      const mainEventEndDate = new Date(mainEvent.endDate);
+      // Check if the new event is in the correct timeframe compared to the main one
+      const twoHoursAfterMainEvent = new Date(mainEventEndDate.getTime() + 2 * 60 * 60 * 1000); // Add 2 hours
+      if (subEventStartDate > twoHoursAfterMainEvent) {
+        return res.status(400).json({
+          message: 'Subevent must start no later than 2 hours after the main event ends.',
+        });
+      }
+
+      // **New Validation: Subevent Groups**
+      const mainEventGroups = mainEvent.groups; // Array of group names
+      const subEventGroups = groups || []; // Subevent groups from request
+
+      // Ensure all subEventGroups are in mainEventGroups (This is checked in the view by dynamically displaying the possible groups)
+      const invalidGroups = subEventGroups.filter(group => !mainEventGroups.includes(group));
+      console.log("Invalid Groups: " + invalidGroups);
+
+      if (invalidGroups.length > 0) {
+        return res.status(400).json({
+          message: `Invalid group(s) for subevent: ${invalidGroups.join(', ')}. Subevent groups must be a subset of the main event's groups.`,
+        });
+      }
+
+      
+
+    }
+    //Image upload
+    let imagePath = null;
+    if (req.file) {
+      imagePath = req.file.path;
+    }
+
+    //Create it in the model
+    //console.log("Sending: " + name + " " + type + " " + startDate + " " + endDate + " " + maxParticipants + " " + imagePath + " " + parentId + " " + groups + " " + teams + " " + loc + " " + desc);
+    const event = await Event.createEvent(name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams, loc, desc);
+
+    //Send signal to view about needing to refresh its contents
+    console.log("Event created");
+    const io = socketService.getIO();
+    console.log("Get IO is ok");
+    io.emit('refresh', { message: 'Event created'});
+    console.log("Response emitted");
+
+    res.status(201).json(event);
+  } catch (error) {
+    console.error('Create Event Error:', error);
+    res.status(500).json({ message: 'Error creating event' });
+  }
+};
+
+
 
 exports.updateEvent = async (req, res) => {
   const { id } = req.params;
@@ -569,6 +761,7 @@ exports.updateEvent = async (req, res) => {
     // Proceed to update the event
     const updatedEvent = await Event.updateEvent(id, name, type, startDate, endDate, maxParticipants, imagePath, parentId, groups, teams, loc, desc);
     if (updatedEvent) {
+      //Simple emmitter for refreshment of the view
       const io = socketService.getIO();
       io.emit('refresh', { message: 'Event updated', eventId: updatedEvent.id });
       res.status(200).json(updatedEvent);
@@ -582,27 +775,46 @@ exports.updateEvent = async (req, res) => {
 };
 
 exports.deleteEvent = async (req, res) => {
-    const { id } = req.params;
-    try {
-        
-        const event = await Event.findByPk(id);
-        const deletedEvent = await Event.deleteEvent(id);
-        //console.log("Event: " + deletedEvent);
-        if (event) {
-            console.log("Event deleted");
-            const io = socketService.getIO();
-            console.log("Get IO is ok")
-            io.emit('refresh', { message: 'Event deleted'});
-            console.log("Response emitted")
-            res.status(204).end();
-        } else {
-            res.status(404).json({ message: 'Event not found' });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error deleting event' });
+  const { id } = req.params;
+  try {
+    // Find the main event by its primary key.
+    const event = await Event.findByPk(id);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
     }
+
+    // Find all subevents (those whose parentId equals the main event's id)
+    const subEvents = await Event.findAll({ where: { parentId: id } });
+
+    // Delete join data and then subevents
+    for (const subEvent of subEvents) {
+      // Delete all rows in EventParticipants for this subevent.
+      await EventParticipants.destroy({ where: { eventId: subEvent.id } });
+      // Delete the subevent record.
+      await subEvent.destroy();
+    }
+
+    // Delete join data for the main event.
+    await EventParticipants.destroy({ where: { eventId: id } });
+
+    // Delete the main event record.
+    await event.destroy();
+
+    console.log("Event and its subevents deleted");
+
+    // Emit a refresh event to notify connected clients.
+    const io = socketService.getIO();
+    io.emit('refresh', { message: 'Event deleted' });
+    res.status(204).end();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error deleting event' });
+  }
 };
+
+/*
+  Joining and Leaving events
+*/
 
 exports.joinEvent = async (req, res) => {
     const { eventId, personId } = req.body;
@@ -668,204 +880,13 @@ exports.joinEvent = async (req, res) => {
     }
   };
 
-  exports.isPersonSubscribedToEvent = async (req, res) => {
-    const { eventId, personId } = req.body;
-  
-    try {
-      const event = await Event.findByPk(eventId);
-      if (!event) {
-        return res.status(404).json({ message: 'Event not found.' });
-      }
-  
-      // Check if the person is a participant
-      const isParticipant = await event.hasPerson(personId);
-  
-      res.status(200).json({ subscribed: isParticipant });
-    } catch (error) {
-      console.error('Check Subscription Error:', error);
-      res.status(500).json({ message: 'Internal server error.' });
-    }
-  };
 
-  exports.getSubscribedUsers = async (req, res) => {
-    // Get the eventId from the request (could be in req.body or as a URL parameter)
-    const eventId = req.params.eventId; // Or req.params.eventId if using URL parameters
-  
-    try {
-      // Find the event by primary key
-      const event = await Event.findByPk(eventId);
-      if (!event) {
-        return res.status(404).json({ message: 'Event not found.' });
-      }
-  
-      // Assuming the association is set up with a method like getPeople()
-      // If your association uses a different alias, adjust accordingly.
-      const subscribedUsers = await event.getPeople();
-  
-      // Optionally, you can format the users or filter fields before sending
-      res.status(200).json({ 
-        subscribedUsers: subscribedUsers 
-      });
-    } catch (error) {
-      console.error('Error fetching subscribed users:', error);
-      res.status(500).json({ message: 'Internal server error.' });
-    }
-  };
 
-  exports.getEventsForDate = async (req, res) => {
-    const date = req.params.date;
-    try {
-      const events = await Event.findAll({
-        where: { 
-          parentId: null,
-          //startDate: { [Op.gte]: now }, // Only events that haven't started yet
-          startDate: { [Op.eq]: req.params.date }, // Only events that happen today
-        }, // Fetch only main events
-        attributes: {
-          include: [
-            [
-              // Count participants for main events
-              Sequelize.literal(`(
-                SELECT COUNT(*)
-                FROM EventParticipants AS ep
-                WHERE ep.EventId = "Event"."id"
-              )`),
-              'currentParticipants',
-            ],
-          ],
-        },
-        include: [
-          {
-            model: Event,
-            as: 'subevents',
-            attributes: {
-              include: [
-                [
-                  // Count participants for first-level subevents
-                  Sequelize.literal(`(
-                    SELECT COUNT(*)
-                    FROM EventParticipants AS ep
-                    WHERE ep.EventId = "subevents"."id"
-                  )`),
-                  'currentParticipants',
-                ],
-              ],
-            },
-            include: [
-              {
-                model: Event,
-                as: 'subevents', // Nested subevents
-                attributes: {
-                  include: [
-                    [
-                      // Count participants for second-level subevents
-                      Sequelize.literal(`(
-                        SELECT COUNT(*)
-                        FROM EventParticipants AS ep
-                        WHERE ep.EventId = "subevents->subevents"."id"
-                      )`),
-                      'currentParticipants',
-                    ],
-                  ],
-                },
-              },
-            ],
-          },
-        ],
-      });
-  
-      res.status(200).json(events);
-    } catch (error) {
-      console.error('Get Events Error:', error);
-      res.status(500).json({ message: 'Error retrieving events' });
-    }
-  }
 
-  exports.getSubscribedEventsForPerson = async (req, res) => {
-    const { personId } = req.params;
-    console.log('Fetching subscribed events for personId:', personId);
+
+
+
   
-    try {
-      // Fetch all event subscription records for the person
-      const subscriptions = await EventParticipants.findAll({
-        where: { personId: personId },
-        attributes: ['eventId'],
-      });
-  
-      // Map to an array of event IDs
-      const eventIds = subscriptions.map(sub => sub.eventId);
-      console.log('Subscribed Event IDs:', eventIds);
-  
-      // If there are no subscribed events, return an empty array
-      if (eventIds.length === 0) {
-        return res.status(200).json({ subscribedEvents: [] });
-      }
-  
-      // Fetch the full event details corresponding to these IDs.
-      // You can include associations (such as subevents, participant counts, etc.)
-      const events = await Event.findAll({
-        where: {
-          id: {
-            [Op.in]: eventIds,
-          },
-        },
-        // Example: Include subevents and current participant counts if needed
-        attributes: {
-          include: [
-            [
-              Sequelize.literal(`(
-                SELECT COUNT(*)
-                FROM "EventParticipants" AS ep
-                WHERE ep."EventId" = "Event"."id"
-              )`),
-              'currentParticipants',
-            ],
-          ],
-        },
-        include: [
-          {
-            model: Event,
-            as: 'subevents',
-            attributes: {
-              include: [
-                [
-                  Sequelize.literal(`(
-                    SELECT COUNT(*)
-                    FROM "EventParticipants" AS ep
-                    WHERE ep."EventId" = "subevents"."id"
-                  )`),
-                  'currentParticipants',
-                ],
-              ],
-            },
-            include: [
-              {
-                model: Event,
-                as: 'subevents', // Nested subevents
-                attributes: {
-                  include: [
-                    [
-                      Sequelize.literal(`(
-                        SELECT COUNT(*)
-                        FROM "EventParticipants" AS ep
-                        WHERE ep."EventId" = "subevents->subevents"."id"
-                      )`),
-                      'currentParticipants',
-                    ],
-                  ],
-                },
-              },
-            ],
-          },
-        ],
-      });
-  
-      res.status(200).json({ subscribedEvents: events });
-    } catch (error) {
-      console.error('Error fetching subscribed events:', error);
-      res.status(500).json({ message: 'Internal server error.' });
-    }
-  };
 
   // exports.getUploadImage = (req, res) => {
   //   // Extract the filename from the URL parameter

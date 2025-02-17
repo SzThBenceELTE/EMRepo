@@ -6,6 +6,10 @@ const EventParticipants = require('../models/EventParticipants');
 const sequelize = require('sequelize');
 const socketService = require('../socketService');
 
+/*
+    Getters for People
+*/
+
 exports.getPersons = async (req, res) => {
     try {
         const persons = await Person.getAll();
@@ -72,6 +76,93 @@ exports.getUserFromPerson = async (req, res) => {
     }
 };
 
+exports.getPersonById = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const person = await Person.findById(id);
+        if (person) {
+            res.status(200).json(person);
+        } else {
+            res.status(404).json({ message: 'Person not found' });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error retrieving person' });
+    }
+};
+
+/*
+    Subscription getter
+*/
+
+exports.getSubscribedEvents = async (req, res) => {
+    const { personId } = req.params;
+    console.log('Fetching subscribed events for personId:', personId);
+
+    try {
+        const subscriptions = await EventParticipants.findAll({
+            where: { personId: personId },
+            attributes: ['eventId'],
+        });
+
+        const eventIds = subscriptions.map(sub => sub.eventId);
+        console.log('Subscribed Event IDs:', eventIds);
+
+        res.status(200).json({ subscribedEventIds: eventIds });
+    } catch (error) {
+        console.error('Error fetching subscribed events:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+
+/*
+    Team getters
+*/
+
+exports.getTeamsForPerson = async (req, res) => {
+    const { personId } = req.params;
+    console.log('Fetching teams for personId:', personId);
+
+    try {
+        const person = await Person.findByPk(personId);
+        if (!person) {
+            return res.status(404).json({ message: 'Person not found.' });
+        }
+
+        const teams = await person.getTeams();
+        console.log('Teams:', teams);
+
+        res.status(200).json(teams);
+    } catch (error) {
+        console.error('Error fetching teams:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+
+exports.getPersonsWithNoTeams = async (req, res) => {
+    try {
+        const persons = await Person.findAll({
+            include: [{
+                model: Team,
+                through: { attributes: [] }  // Exclude join table attributes if desired
+            }]
+        });
+
+        // Now, each person should have a Teams property (an empty array if no teams)
+        const personsWithNoTeams = persons.filter(person => person.Teams.length === 0);
+        console.log('Persons with no teams:', personsWithNoTeams);
+
+        res.status(200).json(personsWithNoTeams);
+    } catch (error) {
+        console.error('Error fetching persons with no teams:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+    }
+}
+
+/*
+    Person manipulation
+*/
+
 exports.createPerson = async (req, res) => {
     const { firstName, surname, role, group } = req.body;
     console.log(req.body);
@@ -90,20 +181,7 @@ exports.createPerson = async (req, res) => {
     }
 };
 
-exports.getPersonById = async (req, res) => {
-    const { id } = req.params;
-    try {
-        const person = await Person.findById(id);
-        if (person) {
-            res.status(200).json(person);
-        } else {
-            res.status(404).json({ message: 'Person not found' });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error retrieving person' });
-    }
-};
+
 
 exports.updatePerson = async (req, res) => {
     const { id } = req.params;
@@ -162,62 +240,3 @@ exports.deletePerson = async (req, res) => {
     }
   };
 
-exports.getSubscribedEvents = async (req, res) => {
-    const { personId } = req.params;
-    console.log('Fetching subscribed events for personId:', personId);
-
-    try {
-        const subscriptions = await EventParticipants.findAll({
-            where: { personId: personId },
-            attributes: ['eventId'],
-        });
-
-        const eventIds = subscriptions.map(sub => sub.eventId);
-        console.log('Subscribed Event IDs:', eventIds);
-
-        res.status(200).json({ subscribedEventIds: eventIds });
-    } catch (error) {
-        console.error('Error fetching subscribed events:', error);
-        res.status(500).json({ message: 'Internal server error.' });
-    }
-};
-
-exports.getTeamsForPerson = async (req, res) => {
-    const { personId } = req.params;
-    console.log('Fetching teams for personId:', personId);
-
-    try {
-        const person = await Person.findByPk(personId);
-        if (!person) {
-            return res.status(404).json({ message: 'Person not found.' });
-        }
-
-        const teams = await person.getTeams();
-        console.log('Teams:', teams);
-
-        res.status(200).json(teams);
-    } catch (error) {
-        console.error('Error fetching teams:', error);
-        res.status(500).json({ message: 'Internal server error.' });
-    }
-};
-
-exports.getPersonsWithNoTeams = async (req, res) => {
-    try {
-        const persons = await Person.findAll({
-            include: [{
-                model: Team,
-                through: { attributes: [] }  // Exclude join table attributes if desired
-            }]
-        });
-
-        // Now, each person should have a Teams property (an empty array if no teams)
-        const personsWithNoTeams = persons.filter(person => person.Teams.length === 0);
-        console.log('Persons with no teams:', personsWithNoTeams);
-
-        res.status(200).json(personsWithNoTeams);
-    } catch (error) {
-        console.error('Error fetching persons with no teams:', error);
-        res.status(500).json({ message: 'Internal server error.' });
-    }
-}
