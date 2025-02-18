@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:user_frontend/services/api_service.dart';
+import 'package:user_frontend/services/auth_service.dart';
 
 class EventWidget extends StatefulWidget {
   final int eventId, limit, rank;
@@ -59,7 +60,7 @@ class EventWidget extends StatefulWidget {
         endTime = event['endDate'] ?? '',
         location = event['location'] ?? '',
         limit = event['maxParticipants'] ?? 0,
-        image ="localhost:3000\\" + event['imagePath'] ?? '',
+        image ="localhost:3000\\" + (event['imagePath'] ?? ''),
         status = event['status'] ?? 'pending',
         subevent_name = event['subevent_name'] ?? '',
         subevent_description = event['subevent_description'] ?? '',
@@ -81,6 +82,7 @@ class _EventWidgetState extends State<EventWidget> {
   late String subeventStatus;
   late int waitingListPosition = 0;
   late int subeventWaitingListPosition = 0;
+  late bool isParticipant= false;
 
   @override
   void initState() {
@@ -90,6 +92,11 @@ class _EventWidgetState extends State<EventWidget> {
     waitingListPosition = status == 'accepted' ? 0 : widget.rank;
     subeventWaitingListPosition =
         subeventStatus == 'accepted' ? 0 : widget.rank;
+    _initializeParticipant();
+  }
+
+  void _initializeParticipant() async {
+    isParticipant = await _isParticipant();
   }
 
   void _updateStatus(String newStatus, {bool isSubevent = false}) async {
@@ -116,8 +123,71 @@ class _EventWidgetState extends State<EventWidget> {
     }
   }
 
+  void _joinEvent() async {
+    var person = await AuthService.getPerson();
+    if (person == null) {
+      return;
+    }
+    var personId = person['id'];
+
+    var response = await ApiService.post('/events/join', {
+      'eventId': widget.eventId,
+      'personId' : personId,
+    });
+    if (response.statusCode == 200) {
+      var body = jsonDecode(response.body);
+      setState(() {
+        status = "accepted";
+        //waitingListPosition = body['rank'] ?? 0;
+      });
+      widget.onStatusChanged();
+    }
+  }
+
+  void _leaveEvent() async {
+    var person = await AuthService.getPerson();
+    if (person == null) {
+      return;
+    }
+    var personId = person['id'];
+
+    var response = await ApiService.post('/events/leave', {
+      'eventId': widget.eventId,
+    });
+    if (response.statusCode == 200) {
+      //var body = jsonDecode(response.body);
+      setState(() {
+        status = "rejected";
+        //waitingListPosition = 0;
+      });
+      widget.onStatusChanged();
+    }
+  }
+
+  Future<bool> _isParticipant() async {
+    var person = await AuthService.getPerson();
+    if (person == null) {
+      return false;
+    }
+    var personId = person['id'];
+
+    var response = await ApiService.get('/events/${widget.eventId}/subscribedUsers');
+    if (response.statusCode == 200) {
+      var body = jsonDecode(response.body);
+      print("Body: $body");
+      for (var user in body['subscribedUsers']) {
+        if (user['id'] == personId)  {
+          print("User is participant");
+          return true;
+        }
+      }
+    }
+    print("User is not participant");
+    return false;
+  }
+
   Widget _buildStatusButton(
-    String statusText,
+    String text,
     VoidCallback? onPressed,
     Color backgroundColor,
   ) {
@@ -125,7 +195,7 @@ class _EventWidgetState extends State<EventWidget> {
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(backgroundColor: backgroundColor),
       child: Text(
-        statusText,
+        text,
         style: TextStyle(color: Colors.black),
       ),
     );
@@ -304,14 +374,6 @@ class _EventWidgetState extends State<EventWidget> {
                             ? null
                             : () => _updateStatus('applied'),
                         Colors.green,
-                      ),
-                      SizedBox(width: 10.0),
-                      _buildStatusButton(
-                        status == 'rejected' ? 'Rejected' : 'Reject',
-                        status == 'rejected'
-                            ? null
-                            : () => _updateStatus('rejected'),
-                        Colors.red,
                       ),
                     ],
                   ),
