@@ -676,8 +676,8 @@ exports.updateEvent = async (req, res) => {
   console.log("Request Body: " + JSON.stringify(req.body));
   console.log("Request File: " + JSON.stringify(req.file));
  
-  let loc = location ? location : null;
-  let desc = description ? description : null;
+  let loc = location ? location : "";
+  let desc = description ? description : "";
 
   let groups = req.body.groups;
   
@@ -839,7 +839,7 @@ exports.joinEvent = async (req, res) => {
       }
   
       // Add person to the event
-      await event.addPerson(personId);
+      await event.addPerson(personId, {through: {status: 'accepted'}});
 
       const io = socketService.getIO();
       io.emit('refresh', { message: 'Event joined', eventId: event.id, personId: personId });

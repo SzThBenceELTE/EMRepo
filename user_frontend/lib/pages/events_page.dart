@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:user_frontend/services/api_service.dart';
+import 'package:user_frontend/services/auth_service.dart';
 import 'package:user_frontend/services/event_service.dart';
 import 'package:user_frontend/widgets/event_widget.dart';
 import 'package:user_frontend/widgets/text_filter.dart';
@@ -27,42 +29,55 @@ class _EventsPageState extends State<EventsPage> {
   }
 
   Future<void> _fetchAndFilterEvents() async {
-    try {
-      print("Fetch and Filter Started");
-      final eventsData = await EventService.fetchEvents();
-      final events = eventsData;
-      print("Got events: $events");
+  try {
+    print("Fetch and Filter Started");
+    final eventsData = await EventService.fetchEvents();
+    final events = eventsData;
+    print("Got events: $events");
 
-      final filteredEvents = events.where((event) {
-        final eventDate = DateTime.parse(event['startDate']);
-        print("Event date: $eventDate");
-        final isPast = eventDate.isBefore(DateTime.now());
-        print("Is past: $isPast");
-        final isAccepted = event['status'] == 'accepted';
-        print("Is accepted: $isAccepted");
+    // Get the current user's ID; adjust this according to your implementation.
+    final currentUser = await AuthService.getPerson();
+    final currentUserId = currentUser?['id'];
 
-        print("Past events: ${widget.pastEvents}");
-        print("Only accepted: ${widget.onlyAccepted}");
+    final filteredEvents = events.where((event) {
+      final eventDate = DateTime.parse(event['startDate']);
+      print("Event date: $eventDate");
+      final isPast = eventDate.isBefore(DateTime.now());
+      print("Is past: $isPast");
 
-        return (widget.pastEvents ? isPast : !isPast) &&
-            (!widget.onlyAccepted || isAccepted);
-      }).toList();
+      // Instead of checking event['status'], check if the event's participants array contains the current user.
+      bool hasConnection = false;
+      print("Event participants: ${event['participants']}");
+      if (event['participants'] != null && currentUserId != null) {
+        hasConnection = (event['participants'] as List).any((participant) {
+          return participant['id'] == currentUserId;
+        });
+      }
+      print("Has connection (accepted): $hasConnection");
 
-      setState(() {
-        _events = filteredEvents;
-        print("Events: $_events");
-        _filteredEvents = filteredEvents;
-        print("Filtered events: $_filteredEvents");
-        _isLoading = false;
-        print("Fetch and Filter Done");
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
-    }
+      print("Past events: ${widget.pastEvents}");
+      print("Only accepted: ${widget.onlyAccepted}");
+
+      return (widget.pastEvents ? isPast : !isPast) &&
+          (!widget.onlyAccepted || hasConnection);
+    }).toList();
+
+    setState(() {
+      _events = filteredEvents;
+      print("Events: $_events");
+      _filteredEvents = filteredEvents;
+      print("Filtered events: $_filteredEvents");
+      _isLoading = false;
+      print("Fetch and Filter Done");
+    });
+  } catch (e) {
+    setState(() {
+      _error = e.toString();
+      _isLoading = false;
+    });
   }
+}
+
 
   void _filterEventsByName(String query) {
     setState(() {

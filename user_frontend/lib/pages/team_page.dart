@@ -11,6 +11,7 @@ class TeamPage extends StatefulWidget {
 
 class _TeamPageState extends State<TeamPage> {
   List<dynamic>? _teamData;
+  List<dynamic> _users = [];
   List<dynamic> _filteredUsers = [];
   bool _isLoading = true;
   String _errorMessage = '';
@@ -55,12 +56,14 @@ class _TeamPageState extends State<TeamPage> {
         final data = jsonDecode(response.body);
         setState(() {
           _teamData = decodedResponse;
+          _users = decodedTeamMates;
           _filteredUsers = decodedTeamMates;
           _isLoading = false;
         });
       } else if (response.statusCode == 404) {
         setState(() {
           _teamData = [];
+          _users = [];
           _filteredUsers = [];
           _isLoading = false;
         });
@@ -77,7 +80,7 @@ class _TeamPageState extends State<TeamPage> {
 
   void _filterUsersByName(String query) {
     setState(() {
-      _filteredUsers = _teamData!
+      _filteredUsers = _users!
           .where((user) =>
               '${user['firstName']} ${user['surname']}'.toLowerCase().contains(query.toLowerCase()))
           .toList();

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl, FormGroup } from '@angular/forms';
 import { ApiService } from '../services/api.service';
@@ -9,6 +9,8 @@ import { AuthService } from '../services/auth.service';
 import { PersonService } from '../services/person/person.service';
 import { RoleTypeEnum } from '../models/enums/role-type.enum';
 import { GroupTypeEnum } from '../models/enums/group-type.enum';
+import { HttpClient } from '@angular/common/http';
+import { RealTimeService } from '../services/real-time/real-time.service';
 
 @Component({
   selector: 'app-users',
@@ -49,9 +51,24 @@ export class UsersComponent {
   });
 
 
-  constructor(private apiService: ApiService,  private authService: AuthService, private router: Router) {
+  constructor(private apiService: ApiService,
+      private authService: AuthService,
+       private router: Router,
+       private http: HttpClient,
+       private realTimeService: RealTimeService,
+       private ngZone: NgZone) {
     this.fetchUsers();
     this.loadAllUserAccounts();
+
+    // Subscribe to the refresh event and re-fetch events on refresh
+    this.realTimeService.onRefresh((data) => {
+      console.log('Refresh event received:', data);
+      // Re-enter Angular zone to update the BehaviorSubject
+      this.ngZone.run(() => {
+        this.fetchUsers();
+        this.loadAllUserAccounts();
+      });
+    });
   }
 
   fetchUsers() {

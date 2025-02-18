@@ -51,6 +51,7 @@ class AuthService {
     print("Returning: ${response.body}");
 
     final parsed = jsonDecode(response.body) as Map<String, dynamic>;
+    print("Parsed: $parsed");
     return parsed; //continue here
   }
 

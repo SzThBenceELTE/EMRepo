@@ -1,4 +1,4 @@
-import { Component, } from '@angular/core';
+import { Component, NgZone, } from '@angular/core';
 import { ApiService } from '../services/api.service';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -10,6 +10,8 @@ import { filter, Observable } from 'rxjs';
 import { StatusTypeEnum } from '../models/enums/status-type.enum';
 import { EventTypeEnum } from '../models/enums/event-type.enum';
 import { GroupTypeEnum } from '../models/enums/group-type.enum';
+import { HttpClient } from '@angular/common/http';
+import { RealTimeService } from '../services/real-time/real-time.service';
 
 /*
   TODO: The enum types are not saved on my server, I'll have to switch them out completely
@@ -116,7 +118,11 @@ export class EventsComponent {
   //probably the image
   selectedFile: File | null = null;
 
-  constructor(private apiService: ApiService, protected authService: AuthService) {
+  constructor(private apiService: ApiService,
+     protected authService: AuthService,
+     private http: HttpClient,
+     private realTimeService: RealTimeService,
+     private ngZone: NgZone) {
     this.fetchEvents();
     this.apiService.get('teams').subscribe((teams) => {
       this.teamsInDropdownFormat = teams.map((team: any) => { return { item_id: team.id, item_text: team.name } });
@@ -128,6 +134,14 @@ export class EventsComponent {
     for (const type of Object.values(EventTypeEnum)) {
       this.typesInDropdownFormat.push(type);
     }
+
+    this.realTimeService.onRefresh((data) => {
+      console.log('Refresh event received:', data);
+      // Re-enter Angular zone to update the BehaviorSubject
+      this.ngZone.run(() => {
+        this.fetchEvents();
+      });
+    });
 
     
 

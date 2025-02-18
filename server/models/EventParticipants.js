@@ -24,6 +24,7 @@ const EventParticipants = sequelize.define('EventParticipants', {
     },
     status: {
       type: DataTypes.ENUM(StatusEnum),
+      defaultValue: StatusEnum.ACCEPTED, // Default status is pending
       allowNull: true, // Change to true if the status can be omitted
     },
     application_time: {

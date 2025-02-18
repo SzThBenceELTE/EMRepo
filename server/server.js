@@ -62,7 +62,18 @@ const server = http.createServer(app);
 const io = socketIo(server, {
   path: '/io', // Serve the Socket.IO server at /io
   cors: {
-    origin: "http://localhost:4200", // Allow requests from your Angular app's origin
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or servers)
+      if (!origin) return callback(null, true);
+  
+      // Allow any request from localhost, regardless of port
+      if (origin.startsWith('http://localhost')) {
+        return callback(null, true);
+      }
+  
+      // Disallow other origins
+      return callback(new Error('Not allowed by CORS'));
+    },
     methods: ["GET", "POST"],
     credentials: true, // if you need to support cookies or authentication
   }

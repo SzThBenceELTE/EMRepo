@@ -29,7 +29,7 @@ describe('Get All Events', () => {
     });
 });
 
-describe('Get Specific Event Check', () => {
+describe('Get Specific Event', () => {
     it('should return a single event', async () => {
         const eventId = 1; // adjust to an event you know exists in your test DB
     
@@ -41,13 +41,36 @@ describe('Get Specific Event Check', () => {
     });
 });
 
+describe('Get Non Existents Event', () => {
+    it('should return noone', async () => {
+        const eventId = -2; 
+    
+        const res = await request(server)
+        .get(`/api/events/${eventId}`)
+        .expect(404);
+    
+        expect(res.body).toHaveProperty('message', "Event not found");
+    });
+});
+
+describe('Get Subscribed People Event Check', () => {
+    it('should return a single event', async () => {
+        const eventId = 1; 
+    
+        const res = await request(server)
+        .get(`/api/${eventId}/subscribedUsers`)
+        .expect(404);
+    
+        expect(res.body).toBeInstanceOf(Object);j
+    });
+});
+
 
 
 // describe('POST /api/events', () => {
 //     it('should create a new event', async () => {
 //         const newEvent = {
 //             name: 'Test Event',
-//             type: 
 //             date: '2022-12-31',
 //             location: 'Test Location',
 //             description: 'Test Description',

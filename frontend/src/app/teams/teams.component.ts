@@ -1,10 +1,12 @@
-import { Component, } from '@angular/core';
+import { Component, NgZone, } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl, FormGroup } from '@angular/forms';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { IDropdownSettings, NgMultiSelectDropDownModule } from 'ng-multiselect-dropdown';
 import { FilterComponent } from '../filter/filter.component';
+import { HttpClient } from '@angular/common/http';
+import { RealTimeService } from '../services/real-time/real-time.service';
 
 
 @Component({
@@ -40,8 +42,21 @@ export class TeamsComponent {
   };
   confirmationMessage = '';
 
-  constructor(private apiService: ApiService, protected authService: AuthService) {
+  constructor(private apiService: ApiService,
+     protected authService: AuthService,
+     private http: HttpClient,
+     private realTimeService: RealTimeService,
+     private ngZone: NgZone) {
     this.fetchTeams();
+    
+    this.realTimeService.onRefresh((data) => {
+      console.log('Refresh event received:', data);
+      // Re-enter Angular zone to update the BehaviorSubject
+      this.ngZone.run(() => {
+        this.fetchTeams();
+        this.fetchUsersWithoutTeam();
+      });
+    });
   }
 
   fetchTeams() {

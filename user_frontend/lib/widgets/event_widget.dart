@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:user_frontend/services/api_service.dart';
 import 'package:user_frontend/services/auth_service.dart';
@@ -25,28 +24,29 @@ class EventWidget extends StatefulWidget {
 
   final void Function() onStatusChanged;
 
-  EventWidget(
-      {required this.eventId,
-      required this.name,
-      required this.description,
-      required this.date,
-      required this.startTime,
-      required this.endTime,
-      required this.location,
-      required this.limit,
-      required this.image,
-      required this.status,
-      required this.subevent_name,
-      required this.subevent_description,
-      required this.subevent_startTime,
-      required this.subevent_endTime,
-      required this.subevent_location,
-      required this.subevent_limit,
-      required this.subevent_status,
-      required this.onStatusChanged,
-      required this.rank,
-      required this.onlyView,
-      required this.asPage});
+  EventWidget({
+    required this.eventId,
+    required this.name,
+    required this.description,
+    required this.date,
+    required this.startTime,
+    required this.endTime,
+    required this.location,
+    required this.limit,
+    required this.image,
+    required this.status,
+    required this.subevent_name,
+    required this.subevent_description,
+    required this.subevent_startTime,
+    required this.subevent_endTime,
+    required this.subevent_location,
+    required this.subevent_limit,
+    required this.subevent_status,
+    required this.onStatusChanged,
+    required this.rank,
+    required this.onlyView,
+    required this.asPage,
+  });
 
   EventWidget.fromMap(Map<String, dynamic> event,
       {this.onlyView = false,
@@ -55,17 +55,17 @@ class EventWidget extends StatefulWidget {
       : eventId = event['id'],
         name = event['name'],
         description = event['description'] ?? '',
-        date = event['startDate']  ?? '',
+        date = event['startDate'] ?? '',
         startTime = event['startDate'] ?? '',
         endTime = event['endDate'] ?? '',
         location = event['location'] ?? '',
         limit = event['maxParticipants'] ?? 0,
-        image ="localhost:3000\\" + (event['imagePath'] ?? ''),
+        image = "localhost:3000\\" + (event['imagePath'] ?? ''),
         status = event['status'] ?? 'pending',
         subevent_name = event['subevent_name'] ?? '',
         subevent_description = event['subevent_description'] ?? '',
         subevent_startTime = event['subevent_startTime'] ?? '',
-        subevent_endTime = event['subevent_endTime'] ?? '', 
+        subevent_endTime = event['subevent_endTime'] ?? '',
         subevent_location = event['subevent_location'] ?? '',
         subevent_limit = event['subevent_limit']?.toString() ?? '',
         subevent_status = event['subevent_status'] ?? 'pending',
@@ -80,28 +80,63 @@ class EventWidget extends StatefulWidget {
 class _EventWidgetState extends State<EventWidget> {
   late String status;
   late String subeventStatus;
-  late int waitingListPosition = 0;
-  late int subeventWaitingListPosition = 0;
-  late bool isParticipant= false;
+  late int waitingListPosition;
+  late int subeventWaitingListPosition;
+  late bool isParticipant;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    status = widget.status;
+    _initializer();
+  }
+
+  void _initializer() async {
+    isParticipant = await _isParticipant();
+    print("IsParticipant: $isParticipant");
+    status = isParticipant ? 'accepted' : 'rejected';
     subeventStatus = widget.subevent_status;
     waitingListPosition = status == 'accepted' ? 0 : widget.rank;
     subeventWaitingListPosition =
         subeventStatus == 'accepted' ? 0 : widget.rank;
-    _initializeParticipant();
+    print("Event: ${widget.name}");
+    print("Status: $status");
+    setState(() {
+      _isInitialized = true;
+    });
   }
 
-  void _initializeParticipant() async {
-    isParticipant = await _isParticipant();
+  Future<bool> _isParticipant() async {
+    print("Calling _isParticipant");
+    var person = await AuthService.getPerson();
+    if (person == null) {
+      return false;
+    }
+    var personId = person['id'];
+    print("Person ID: $personId");
+    print("Event ID: ${widget.eventId}");
+    var response =
+        await ApiService.get('/events/${widget.eventId}/subscribedUsers');
+    if (response.statusCode == 200) {
+      var body = jsonDecode(response.body);
+      for (var user in body['subscribedUsers']) {
+        if (user['id'] == personId) {
+          print("User is participant");
+          return true;
+        }
+      }
+    }
+    print("User is not participant");
+    return false;
+  }
+
+  bool _isParticipantSimple() {
+    return status == 'accepted';
   }
 
   void _updateStatus(String newStatus, {bool isSubevent = false}) async {
-    var response =
-        await ApiService.patch('/events/${widget.eventId}/change-status', {
+    var response = await ApiService.patch(
+        '/events/${widget.eventId}/change-status', {
       'status': newStatus,
       'subevent': isSubevent,
     });
@@ -129,18 +164,15 @@ class _EventWidgetState extends State<EventWidget> {
       return;
     }
     var personId = person['id'];
-
     var response = await ApiService.post('/events/join', {
       'eventId': widget.eventId,
-      'personId' : personId,
+      'personId': personId,
     });
     if (response.statusCode == 200) {
-      var body = jsonDecode(response.body);
       setState(() {
         status = "accepted";
-        //waitingListPosition = body['rank'] ?? 0;
       });
-      widget.onStatusChanged();
+      //widget.onStatusChanged();
     }
   }
 
@@ -150,47 +182,20 @@ class _EventWidgetState extends State<EventWidget> {
       return;
     }
     var personId = person['id'];
-
     var response = await ApiService.post('/events/leave', {
       'eventId': widget.eventId,
+      'personId': personId,
     });
     if (response.statusCode == 200) {
-      //var body = jsonDecode(response.body);
       setState(() {
         status = "rejected";
-        //waitingListPosition = 0;
       });
-      widget.onStatusChanged();
+      //widget.onStatusChanged();
     }
-  }
-
-  Future<bool> _isParticipant() async {
-    var person = await AuthService.getPerson();
-    if (person == null) {
-      return false;
-    }
-    var personId = person['id'];
-
-    var response = await ApiService.get('/events/${widget.eventId}/subscribedUsers');
-    if (response.statusCode == 200) {
-      var body = jsonDecode(response.body);
-      print("Body: $body");
-      for (var user in body['subscribedUsers']) {
-        if (user['id'] == personId)  {
-          print("User is participant");
-          return true;
-        }
-      }
-    }
-    print("User is not participant");
-    return false;
   }
 
   Widget _buildStatusButton(
-    String text,
-    VoidCallback? onPressed,
-    Color backgroundColor,
-  ) {
+      String text, VoidCallback? onPressed, Color backgroundColor) {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(backgroundColor: backgroundColor),
@@ -227,6 +232,10 @@ class _EventWidgetState extends State<EventWidget> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return Center(child: CircularProgressIndicator());
+    }
+
     if (widget.asPage) {
       return Scaffold(
         appBar: AppBar(
@@ -237,7 +246,7 @@ class _EventWidgetState extends State<EventWidget> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Image.network(widget.image),  //These don't work, I just don't know at this point why
+              Image.network(widget.image),
               SizedBox(height: 10.0),
               Center(
                 child: Text(
@@ -249,10 +258,9 @@ class _EventWidgetState extends State<EventWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('${_formatTime(widget.startTime)} - ${_formatTime(widget.endTime)} ',
+                  Text('${_formatTime(widget.startTime)} - ${_formatTime(widget.endTime)}',
                       style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(
-                      '${widget.date.substring(0, 4)} ${_formatDate(widget.date)}',
+                  Text('${widget.date.substring(0, 4)} ${_formatDate(widget.date)}',
                       style: TextStyle(fontWeight: FontWeight.bold)),
                 ],
               ),
@@ -260,8 +268,7 @@ class _EventWidgetState extends State<EventWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(widget.location,
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(widget.location, style: TextStyle(fontWeight: FontWeight.bold)),
                   Text('Limit: ${widget.limit.toString()}',
                       style: TextStyle(fontWeight: FontWeight.bold)),
                 ],
@@ -279,19 +286,16 @@ class _EventWidgetState extends State<EventWidget> {
                 Center(
                   child: Text(
                     widget.subevent_name,
-                    style:
-                        TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
                   ),
                 ),
-                Text(
-                    '${widget.subevent_startTime} - ${widget.subevent_endTime}',
+                Text('${widget.subevent_startTime} - ${widget.subevent_endTime}',
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 SizedBox(height: 10.0),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(widget.location,
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(widget.location, style: TextStyle(fontWeight: FontWeight.bold)),
                     Text('Limit: ${widget.limit.toString()}',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                   ],
@@ -347,86 +351,31 @@ class _EventWidgetState extends State<EventWidget> {
                 Center(
                   child: Text(
                     widget.name,
-                    style:
-                        TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
                   ),
                 ),
                 SizedBox(height: 10.0),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('${_formatTime(widget.startTime)} - ${_formatTime(widget.endTime)} '),
+                    Text('${_formatTime(widget.startTime)} - ${_formatTime(widget.endTime)}'),
                     Text(_formatDate(widget.date)),
                   ],
                 ),
                 SizedBox(height: 10.0),
-                if (!widget.onlyView)
+                
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       _buildStatusButton(
-                        status == 'accepted'
-                            ? 'Accepted'
-                            : status == "applied"
-                                ? 'Applied - $waitingListPosition'
-                                : 'Apply',
-                        (status == "accepted" || status == "applied")
-                            ? null
-                            : () => _updateStatus('applied'),
-                        Colors.green,
+                        status == 'accepted' ? 'Leave' : 'Join',
+                        (_isParticipantSimple())
+                            ? () => _leaveEvent()
+                            : () => _joinEvent(),
+                        (_isParticipantSimple()) ? Colors.red : Colors.green,
                       ),
                     ],
                   ),
-                if (widget.subevent_name != '') ...[
-                  SizedBox(height: 5.0),
-                  Divider(
-                    color: Colors.grey,
-                    thickness: 1,
-                  ),
-                  SizedBox(height: 5.0),
-                  Center(
-                    child: Text(
-                      widget.subevent_name,
-                      style: TextStyle(
-                          fontSize: 20.0, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Text(
-                      '${widget.subevent_startTime} - ${widget.subevent_endTime}'),
-                  SizedBox(height: 10.0),
-                  if (!widget.onlyView)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        _buildStatusButton(
-                          subeventStatus == 'accepted'
-                              ? 'Accepted'
-                              : status == "applied"
-                                  ? 'Applied - $subeventWaitingListPosition'
-                                  : 'Apply',
-                          (subeventStatus == "accepted" ||
-                                  subeventStatus == "applied" ||
-                                  status == "rejected" ||
-                                  status == "pending")
-                              ? null
-                              : () =>
-                                  _updateStatus('applied', isSubevent: true),
-                          Colors.green,
-                        ),
-                        SizedBox(width: 10.0),
-                        _buildStatusButton(
-                          subeventStatus == 'rejected' ? 'Rejected' : 'Reject',
-                          subeventStatus == 'rejected' ||
-                                  status == "rejected" ||
-                                  status == "pending"
-                              ? null
-                              : () =>
-                                  _updateStatus('rejected', isSubevent: true),
-                          Colors.red,
-                        ),
-                      ],
-                    ),
-                ],
                 SizedBox(height: 10.0),
                 Image.network(widget.image),
               ],

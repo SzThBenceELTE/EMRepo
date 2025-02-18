@@ -46,11 +46,8 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   List<dynamic> _getEventForDay(DateTime day) {
-    //print("Getting events for day $day");
     DateTime formattedDate = DateTime.parse(
         '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}');
-    //print("Normal date: $day");
-    //print("Events for day $formattedDate are: ${_events[formattedDate]}");
     return _events[formattedDate] ?? [];
   }
 
@@ -146,10 +143,10 @@ class _CalendarPageState extends State<CalendarPage> {
                     ],
                   ),
                 ),
-                EventsPage(onlyAccepted: true),
+                EventsPage(),
                 EventsPage(
                   pastEvents: true,
-                  onlyAccepted: true,
+                  
                 ),
               ],
             ),
