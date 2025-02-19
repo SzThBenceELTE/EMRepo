@@ -60,7 +60,7 @@ class EventWidget extends StatefulWidget {
         endTime = event['endDate'] ?? '',
         location = event['location'] ?? '',
         limit = event['maxParticipants'] ?? 0,
-        image = "localhost:3000\\" + (event['imagePath'] ?? ''),
+        image = "http://localhost:3000/" + (event['imagePath'] ?? "uploads/default/image3-min-1.webp"),
         status = event['status'] ?? 'pending',
         subevent_name = event['subevent_name'] ?? '',
         subevent_description = event['subevent_description'] ?? '',
@@ -246,7 +246,7 @@ class _EventWidgetState extends State<EventWidget> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Image.network(widget.image),
+              
               SizedBox(height: 10.0),
               Center(
                 child: Text(
@@ -262,6 +262,10 @@ class _EventWidgetState extends State<EventWidget> {
                       style: TextStyle(fontWeight: FontWeight.bold)),
                   Text('${widget.date.substring(0, 4)} ${_formatDate(widget.date)}',
                       style: TextStyle(fontWeight: FontWeight.bold)),
+                      Image.network(widget.image,
+                      width: 200,
+                      height: 200,
+                      fit: BoxFit.cover,),
                 ],
               ),
               SizedBox(height: 10.0),
@@ -360,6 +364,11 @@ class _EventWidgetState extends State<EventWidget> {
                   children: [
                     Text('${_formatTime(widget.startTime)} - ${_formatTime(widget.endTime)}'),
                     Text(_formatDate(widget.date)),
+                    SizedBox(height: 10.0),
+                      Image.network(widget.image,
+                      width: 200,
+                      height: 200,
+                      fit: BoxFit.cover,),
                   ],
                 ),
                 SizedBox(height: 10.0),
@@ -374,10 +383,11 @@ class _EventWidgetState extends State<EventWidget> {
                             : () => _joinEvent(),
                         (_isParticipantSimple()) ? Colors.red : Colors.green,
                       ),
+                      
                     ],
+                    
                   ),
-                SizedBox(height: 10.0),
-                Image.network(widget.image),
+                
               ],
             ),
           ),

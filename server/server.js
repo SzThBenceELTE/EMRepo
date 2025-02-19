@@ -16,6 +16,7 @@ const personRoutes = require('./routes/PersonRoutes'); // API routes for people
 const eventRoutes = require('./routes/EventRoutes'); // API routes for events
 const homeRoutes = require('./routes/HomeRoutes'); // API routes for events
 const teamRoutes = require('./routes/TeamRoutes'); // API routes for teams
+const exportRoutes = require('./routes/ExportRoutes'); // API routes for exporting data
 
 const db = require('./db');
 
@@ -54,29 +55,32 @@ const corsOptions = {
   credentials: true, // Add this if you need to support cookies or HTTP authentication
 };
 
+
+
 app.use(cors(corsOptions));
 
+const sessionOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or servers)
+    if (!origin) return callback(null, true);
+
+    // Allow any request from localhost, regardless of port
+    if (origin.startsWith('http://localhost')) {
+      return callback(null, true);
+    }
+
+    // Disallow other origins
+    return callback(new Error('Not allowed by CORS'));
+  },
+  methods: ["GET", "POST"],
+  credentials: true, // if you need to support cookies or authentication
+}
 
 
 const server = http.createServer(app);
 const io = socketIo(server, {
   path: '/io', // Serve the Socket.IO server at /io
-  cors: {
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or servers)
-      if (!origin) return callback(null, true);
-  
-      // Allow any request from localhost, regardless of port
-      if (origin.startsWith('http://localhost')) {
-        return callback(null, true);
-      }
-  
-      // Disallow other origins
-      return callback(new Error('Not allowed by CORS'));
-    },
-    methods: ["GET", "POST"],
-    credentials: true, // if you need to support cookies or authentication
-  }
+  cors: sessionOptions,
 });
 
 socketService.init(io); // Initialize the socket service
@@ -84,7 +88,6 @@ socketService.init(io); // Initialize the socket service
 // When a client connects
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);
-  
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
   });
@@ -93,15 +96,15 @@ io.on('connection', (socket) => {
 
 
 // API Routes
-//console.log('Serving events from:', path.join(__dirname, 'uploads', 'events'));
+
 console.log('Serving uploads from:', path.join(__dirname, 'uploads'));
-//app.use('/uploads/events', express.static(path.join(__dirname, 'uploads', 'events')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve static files from the 'uploads' directory
 app.use('/api', userRoutes);
 app.use('/api', personRoutes);
 app.use('/api', eventRoutes);
 app.use('/api', homeRoutes);
 app.use('/api', teamRoutes);
+app.use('/api', exportRoutes);
 
 
 // Middleware to serve static Angular files

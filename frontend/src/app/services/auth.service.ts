@@ -16,6 +16,7 @@ export class AuthService {
     return this.apiService.post("users/login", data).pipe(
       tap((data) => {
         console.log(data);
+        console.log(jwtDecode(data['token']));
         localStorage.setItem(this.tokenKey, data['token']);
       })
     )
@@ -39,11 +40,19 @@ export class AuthService {
   }
   
   get isAdmin(): boolean {
-    return this.decodeToken()?.isAdmin;
+    return this.decodeToken()?.role == "MANAGER";
   }
   
   get username(): string {
     return this.decodeToken()?.username;
+  }
+
+  get firstName(): string {
+    return this.decodeToken()?.firstName;
+  }
+
+  get surname(): string {
+    return this.decodeToken()?.surname;
   }
   
   get teamname(): string {
@@ -51,7 +60,7 @@ export class AuthService {
   }
   
   get userId(): string {
-    return this.decodeToken()?.user_id;
+    return this.decodeToken()?.userId;
   }
   
   get teamId(): string {
