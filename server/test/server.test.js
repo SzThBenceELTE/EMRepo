@@ -1,8 +1,13 @@
+require('dotenv').config(); // Load environment variables early
+process.env.NODE_ENV = 'test'; // Ensure NODE_ENV is set to 'test' for tests
+
+require ('../db.js');
 const request = require('supertest');
 const http = require('http');
-const app = require('../server.js'); // assuming you export your Express app from app.js or similar
+const app = require('../app.js'); // assuming you export your Express app from app.js or similar
 const { type } = require('os');
-const { GroupTypeEnum } = require('../enums/GroupEnum.js');
+const GroupTypeEnum = require('../enums/GroupEnum.js');
+const EventTypeEnum = require('../enums/EventEnum.js');
 
 let server;
 
@@ -29,6 +34,36 @@ describe('Get All Events', () => {
     });
 });
 
+describe('Get All Events and Subevents', () => {
+    it('should return a list of events', async () => {
+        const res = await request(server)
+        .get('/api/events/all')
+        .expect(200);
+    
+        expect(res.body).toBeInstanceOf(Array);
+    });
+});
+
+describe('Get All Events and Subevents from any time', () => {
+    it('should return a list of events', async () => {
+        const res = await request(server)
+        .get('/api/events/allandpast')
+        .expect(200);
+    
+        expect(res.body).toBeInstanceOf(Array);
+    });
+});
+
+describe('Get All Events from any time', () => {
+    it('should return a list of events', async () => {
+        const res = await request(server)
+        .get('/api/events/allandpastmain')
+        .expect(200);
+    
+        expect(res.body).toBeInstanceOf(Array);
+    });
+});
+
 describe('Get Specific Event', () => {
     it('should return a single event', async () => {
         const eventId = 1; // adjust to an event you know exists in your test DB
@@ -38,6 +73,19 @@ describe('Get Specific Event', () => {
         .expect(200);
     
         expect(res.body).toHaveProperty('id', eventId);
+    });
+});
+
+describe('Is Person Subscribed to the event test', () => {
+    it('should return a boolean value', async () => {
+        const eventId = 1; 
+        const personId = 1;
+    
+        const res = await request(server)
+        .get(`/api/events/${eventId}/isSubscribed/${personId}`)
+        .expect(200);
+    
+        expect(res.body).toHaveProperty('subscribed');
     });
 });
 
@@ -61,29 +109,57 @@ describe('Get Subscribed People Event Check', () => {
         .get(`/api/${eventId}/subscribedUsers`)
         .expect(404);
     
-        expect(res.body).toBeInstanceOf(Object);j
+        expect(res.body).toBeInstanceOf(Object);
+    });
+});
+
+describe('Get Subscribed Events for a Person', () => {
+    it('should return a list of events', async () => {
+        const personId = 1; 
+    
+        const res = await request(server)
+        .get(`/api/${personId}/subscribedEvents`)
+        .expect(404);
+    
+        expect(res.body).toBeInstanceOf(Object);
     });
 });
 
 
+describe('Create an Event', () => {
+    it('should create a new event', async () => {
+        const newEvent = {
+            name: 'Test Event',
+            type: "MEETUP",
+            startDate: '2025-12-31',
+            endDate: '2025-12-31',
+            maxParticipants: 10,
+            groups: [],
+            teams: [],
+            location: 'Test Location',
+            description: 'Test Description',
+        };
+    
+        const res = await request(server)
+        .post('/api/events')
+        .send(newEvent)
+        .set('Accept', 'application/json')
+        .expect(201);
 
-// describe('POST /api/events', () => {
-//     it('should create a new event', async () => {
-//         const newEvent = {
-//             name: 'Test Event',
-//             date: '2022-12-31',
-//             location: 'Test Location',
-//             description: 'Test Description',
-//         };
+        console.log("Res body in the creation test");
+        console.log(res.body);
     
-//         const res = await request(server)
-//         .post('/api/events')
-//         .send(newEvent)
-//         .expect(201);
-    
-//         expect(res.body).toMatchObject(newEvent);
-//     });
-// });
+        expect(res.body).toBeDefined();
+
+        // // Optionally, verify that the event was created in your test DB
+        // const events = await request(server)
+        // .get('/api/events')
+        // .expect(200);
+
+        // expect(events.body).toContainEqual(expect.objectContaining(newEvent));
+
+    });
+});
 
 // describe('DELETE /api/events/:id', () => {
 //   it('should delete an event and emit a refresh event', async () => {

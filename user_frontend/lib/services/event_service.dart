@@ -12,6 +12,16 @@ class EventService {
     }
   }
 
+  static Future<List<dynamic>> fetchAllEvents() async {
+    final response = await ApiService.get('/events/all');
+    if (response.statusCode == 200) {
+      print("Got data: ${response.body}");
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to fetch event details');
+    }
+  }
+
   static Future<List<dynamic>> fetchEventDetails(String eventId) async {
     final response = await ApiService.get('/events/$eventId');
     if (response.statusCode == 200) {

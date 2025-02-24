@@ -1,5 +1,11 @@
 // db.js
 
+if (process.env.NODE_ENV === 'test') {
+  require('dotenv').config({ path: '.env.test' });
+} else {
+  require('dotenv').config();
+}
+
 const { Op } = require('sequelize'); // Import Sequelize operators
 const sequelize = require('./sequelize'); // Import the sequelize instance
 const bcrypt = require('bcryptjs');

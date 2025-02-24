@@ -13,16 +13,74 @@ const now = new Date();
 
 // Check if a person is subscribed to an event
 exports.isPersonSubscribedToEvent = async (req, res) => {
-  const { eventId, personId } = req.body;
+  const { eventId, personId } = req.params;
 
   try {
-    const event = await Event.findByPk(eventId);
+    const event = await Event.findByPk(eventId, {
+      include: [
+        {
+          model: People,
+          // No alias here if you didn't set one when defining the association
+          through: { attributes: ['status', 'application_time'] },
+        },
+        {
+          model: Event,
+          as: 'subevents',
+          attributes: {
+            include: [
+              [
+                Sequelize.literal(`(
+                  SELECT COUNT(*)
+                  FROM "EventParticipants" AS ep
+                  WHERE ep."EventId" = "subevents"."id"
+                )`),
+                'currentParticipants',
+              ],
+            ],
+          },
+          include: [
+            {
+              model: Event,
+              as: 'subevents',
+              attributes: {
+                include: [
+                  [
+                    Sequelize.literal(`(
+                      SELECT COUNT(*)
+                      FROM "EventParticipants" AS ep
+                      WHERE ep."EventId" = "subevents->subevents"."id"
+                    )`),
+                    'currentParticipants',
+                  ],
+                ],
+              },
+            },
+          ],
+        },
+      ],
+      attributes: {
+        include: [
+          [
+            Sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM "EventParticipants" AS ep
+              WHERE ep."EventId" = "Event"."id"
+            )`),
+            'currentParticipants',
+          ],
+        ],
+      },
+    });
     if (!event) {
       return res.status(404).json({ message: 'Event not found.' });
     }
 
     // Check if the person is a participant
-    const isParticipant = await event.hasPerson(personId);
+    console.log(await event.getPeople());
+    console.log(await event.hasPerson(parseInt(personId)));
+    console.log(personId);
+    const isParticipant = await event.hasPerson(parseInt(personId));
+    console.log("Is Participant: " + isParticipant);
 
     res.status(200).json({ subscribed: isParticipant });
   } catch (error) {
@@ -171,6 +229,11 @@ exports.getEvents = async (req, res) => {
       },
       include: [
         {
+          model: People,
+          // No alias here if you didn't set one when defining the association
+          through: { attributes: ['status', 'application_time'] },
+        },
+        {
           model: Event,
           as: 'subevents',
           attributes: {
@@ -238,6 +301,11 @@ exports.getAllEvents = async (req, res) => {
       },
       include: [
         {
+          model: People,
+          // No alias here if you didn't set one when defining the association
+          through: { attributes: ['status', 'application_time'] },
+        },
+        {
           model: Event,
           as: 'subevents',
           attributes: {
@@ -300,6 +368,11 @@ exports.getAllAndPastEvents = async (req, res) => {
         ],
       },
       include: [
+        {
+          model: People,
+          // No alias here if you didn't set one when defining the association
+          through: { attributes: ['status', 'application_time'] },
+        },
         {
           model: Event,
           as: 'subevents',
@@ -365,6 +438,11 @@ exports.getAllAndPastMainEvents = async (req, res) => {
       },
       include: [
         {
+          model: People,
+          // No alias here if you didn't set one when defining the association
+          through: { attributes: ['status', 'application_time'] },
+        },
+        {
           model: Event,
           as: 'subevents',
           attributes: {
@@ -416,6 +494,11 @@ exports.getEventById = async (req, res) => {
   try {
     const event = await Event.findByPk(id, {
       include: [
+        {
+          model: People,
+          // No alias here if you didn't set one when defining the association
+          through: { attributes: ['status', 'application_time'] },
+        },
         {
           model: Event,
           as: 'subevents',
@@ -499,6 +582,11 @@ exports.getEventsForDate = async (req, res) => {
         ],
       },
       include: [
+        {
+          model: People,
+          // No alias here if you didn't set one when defining the association
+          through: { attributes: ['status', 'application_time'] },
+        },
         {
           model: Event,
           as: 'subevents',
@@ -655,9 +743,16 @@ exports.createEvent = async (req, res) => {
     //Send signal to view about needing to refresh its contents
     console.log("Event created");
     const io = socketService.getIO();
-    console.log("Get IO is ok");
-    io.emit('refresh', { message: 'Event created'});
-    console.log("Response emitted");
+      if (io) {
+        console.log("Get IO is ok");
+        io.emit('refresh', { message: 'Event created' });
+        console.log("Response emitted");
+      } else {
+        console.log("Socket.IO not initialized. Skipping emit.");
+      }
+    // console.log("Get IO is ok");
+    // io.emit('refresh', { message: 'Event created'});
+    // console.log("Response emitted");
 
     res.status(201).json(event);
   } catch (error) {
@@ -763,7 +858,7 @@ exports.updateEvent = async (req, res) => {
     if (updatedEvent) {
       //Simple emmitter for refreshment of the view
       const io = socketService.getIO();
-      io.emit('refresh', { message: 'Event updated', eventId: updatedEvent.id });
+      if (io) {io.emit('refresh', { message: 'Event updated', eventId: updatedEvent.id });}
       res.status(200).json(updatedEvent);
     } else {
       res.status(404).json({ message: 'Event not found' });
@@ -804,7 +899,7 @@ exports.deleteEvent = async (req, res) => {
 
     // Emit a refresh event to notify connected clients.
     const io = socketService.getIO();
-    io.emit('refresh', { message: 'Event deleted' });
+    if (io) {io.emit('refresh', { message: 'Event deleted' });}
     res.status(204).end();
   } catch (error) {
     console.error(error);
@@ -842,7 +937,7 @@ exports.joinEvent = async (req, res) => {
       await event.addPerson(personId, {through: {status: 'accepted'}});
 
       const io = socketService.getIO();
-      io.emit('refresh', { message: 'Event joined', eventId: event.id, personId: personId });
+      if (io) {io.emit('refresh', { message: 'Event joined', eventId: event.id, personId: personId });}
   
       res.status(200).json({ message: 'Successfully joined the event.' });
     } catch (error) {
@@ -870,7 +965,7 @@ exports.joinEvent = async (req, res) => {
       await event.removePerson(personId);
 
       const io = socketService.getIO();
-      io.emit('refresh', { message: 'Event left', eventId: event.id, personId: personId });
+      if (io) {io.emit('refresh', { message: 'Event left', eventId: event.id, personId: personId });}
   
   
       res.status(200).json({ message: 'Successfully left the event.' });

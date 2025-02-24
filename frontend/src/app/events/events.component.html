@@ -69,7 +69,8 @@
         <div class="row mt-2">
           <div class="col-6">
             <strong d-flex justify-content-center>Date:</strong> {{ selectedEvent.startDate | date: 'MMM dd' }} <br>
-            <strong>Time:</strong> {{ selectedEvent.startDate | date: "HH:mm" }} - {{ selectedEvent.endDate | date: "HH:mm" }}
+            <strong>Time:</strong> {{ selectedEvent.startDate | date: "HH:mm" }} - {{ selectedEvent.endDate | date:
+            "HH:mm" }}
           </div>
           <div class="col-6 d-flex align-items-center justify-content-center">
             <p style="margin:auto">{{ selectedEvent.location }}</p>
@@ -78,14 +79,17 @@
         <hr>
         <p>{{ selectedEvent.description }}</p>
         <ul class="list-group info mt-3">
-          <div><h3>Participants</h3> </div>
+          <div>
+            <h3>Participants</h3>
+          </div>
 
-          <ng-container *ngFor="let participant of selectedEvent.participants">
+          <ng-container *ngFor="let participant of selectedEvent.People">
             <li class="list-group-item d-flex justify-content-between" [value]="participant.id">
               {{ participant.firstName }} {{ participant.surname }}
 
           </ng-container>
-
+        </ul>
+        
           <!-- <ng-container *ngFor="let status of userStatuses">
             <button [ngClass]="{
                 'disabled': selectedEvent.users[status].length === 0,
@@ -110,7 +114,7 @@
               </ul>
             </div>
           </ng-container> -->
-        </ul>
+        <!-- </ul> -->
 
         <!-- <div *ngIf="selectedEvent.subevent_name">
           <hr>
@@ -157,7 +161,48 @@
             </ng-container>
           </ul>
         </div> -->
+        <ul class="list-group info mt-3">
+          <div>
+            <h3>Subevents</h3>
+          </div>
+          <ng-container *ngFor="let subevent of fetchSubEvents(selectedEvent.id)">
+            <li class="list-group-item d-flex justify-content-between" [value]="subevent.id">
+              <div class="event-container text-center">
+                <img [src]="getImagePath(subevent)" class="img-fluid" alt="">
+                <div class="mt-2">
+                  <div class="align-items-center mb-2 d-flex justify-content-center mt-2" style="height: 50px;">
+                    <h4><strong>{{ subevent.name }} </strong></h4>
+                  </div>
+                  <div class="row mt-2">
+                    <div class="col-6">
+                      <strong>{{ subevent.startDate | date: 'MMM dd' }}</strong>
+                      <p>{{ subevent.startDate | date: 'HH:mm' }} - {{ subevent.endDate | date: 'HH:mm' }}</p>
+                    </div>
+                    <div class="col-6 d-flex align-items-center justify-content-center">
+          
+                      <p>{{subevent.currentParticipants}} / {{ subevent.maxParticipants }}</p>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-6">
+                      <button class="btn btn-secondary" type="button" data-bs-toggle="modal" data-bs-target="#submitEventModal"
+                        (click)="fetchEditEvent(subevent.id)">Edit</button>
+                    </div>
+                    <div class="col-6">
+                      <button  data-bs-target="#viewEventModal" class="btn btn-primary"
+                        (click)="setSelectedEvent(subevent.id)">
+                        View
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+  
+          </ng-container>
+        </ul>
+
       </div>
+      
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
@@ -186,16 +231,16 @@
             </div>
             <div class="col-3">
               <div class="form-floating">
-                <input type="number" id="maxParticipants" formControlName="maxParticipants" class="form-control" placeholder="15"
-                  min="1">
+                <input type="number" id="maxParticipants" formControlName="maxParticipants" class="form-control"
+                  placeholder="15" min="1">
                 <label class="form-label" for="maxParticipants">Limit</label>
               </div>
             </div>
           </div>
           <div class="mb-3 row">
             <div class="col-12 d-flex align-items-center">
-              <ng-multiselect-dropdown class="w-100 form-control" formControlName="type"
-                [placeholder]="'Event Type'" [settings]="eventsDropdownSettings" [data]="typesInDropdownFormat">
+              <ng-multiselect-dropdown class="w-100 form-control" formControlName="type" [placeholder]="'Event Type'"
+                [settings]="eventsDropdownSettings" [data]="typesInDropdownFormat">
               </ng-multiselect-dropdown>
             </div>
           </div>
@@ -231,8 +276,8 @@
                 <label for="startTime" class="form-label">Start Time</label>
               </div>
             </div>
-            
-            
+
+
           </div>
           <div class="mb-3 row">
             <div class="col-8">

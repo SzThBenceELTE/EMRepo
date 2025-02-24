@@ -25,7 +25,8 @@ class _EventsPageState extends State<EventsPage> {
   void initState() {
     super.initState();
     _fetchAndFilterEvents();
-    print("Init state done");
+    print("_events: $_events");
+    print("_filteredEvents: $_filteredEvents");
   }
 
   Future<void> _fetchAndFilterEvents() async {

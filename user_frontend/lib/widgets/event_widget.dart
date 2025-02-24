@@ -3,6 +3,42 @@ import 'package:flutter/material.dart';
 import 'package:user_frontend/services/api_service.dart';
 import 'package:user_frontend/services/auth_service.dart';
 
+class Subevent {
+  final int id;
+  final String name;
+  final String description;
+  final String startTime;
+  final String endTime;
+  final String location;
+  final int limit;
+  String status;
+
+  Subevent({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.startTime,
+    required this.endTime,
+    required this.location,
+    required this.limit,
+    required this.status,
+  });
+
+  factory Subevent.fromMap(Map<String, dynamic> map) {
+    return Subevent(
+      id: map['id'],
+      name: map['name'],
+      description: map['description'] ?? '',
+      startTime: map['startDate'] ?? '',
+      endTime: map['endDate'] ?? '',
+      location: map['location'] ?? '',
+      limit: map['maxParticipants'] ?? 0,
+      status: map['status'] ?? 'pending',
+    );
+  }
+}
+
+
 class EventWidget extends StatefulWidget {
   final int eventId, limit, rank;
   final bool onlyView, asPage;
@@ -13,15 +49,10 @@ class EventWidget extends StatefulWidget {
       endTime,
       location,
       image,
-      status,
-      subevent_name,
-      subevent_description,
-      subevent_startTime,
-      subevent_endTime,
-      subevent_location,
-      subevent_limit,
-      subevent_status;
+      status;
 
+
+  final List<Subevent> subevents;
   final void Function() onStatusChanged;
 
   EventWidget({
@@ -35,13 +66,7 @@ class EventWidget extends StatefulWidget {
     required this.limit,
     required this.image,
     required this.status,
-    required this.subevent_name,
-    required this.subevent_description,
-    required this.subevent_startTime,
-    required this.subevent_endTime,
-    required this.subevent_location,
-    required this.subevent_limit,
-    required this.subevent_status,
+    required this.subevents,
     required this.onStatusChanged,
     required this.rank,
     required this.onlyView,
@@ -62,14 +87,10 @@ class EventWidget extends StatefulWidget {
         limit = event['maxParticipants'] ?? 0,
         image = "http://localhost:3000/" + (event['imagePath'] ?? "uploads/default/image3-min-1.webp"),
         status = event['status'] ?? 'pending',
-        subevent_name = event['subevent_name'] ?? '',
-        subevent_description = event['subevent_description'] ?? '',
-        subevent_startTime = event['subevent_startTime'] ?? '',
-        subevent_endTime = event['subevent_endTime'] ?? '',
-        subevent_location = event['subevent_location'] ?? '',
-        subevent_limit = event['subevent_limit']?.toString() ?? '',
-        subevent_status = event['subevent_status'] ?? 'pending',
-        rank = event['rank'] ?? 0;
+        rank = event['rank'] ?? 0,
+        subevents = (event['subevents'] as List<dynamic>?)
+            ?.map((se) => Subevent.fromMap(se))
+            .toList() ?? [];
 
   static void _defaultOnStatusChanged() {}
 
@@ -92,19 +113,28 @@ class _EventWidgetState extends State<EventWidget> {
   }
 
   void _initializer() async {
-    isParticipant = await _isParticipant();
-    print("IsParticipant: $isParticipant");
-    status = isParticipant ? 'accepted' : 'rejected';
-    subeventStatus = widget.subevent_status;
-    waitingListPosition = status == 'accepted' ? 0 : widget.rank;
-    subeventWaitingListPosition =
-        subeventStatus == 'accepted' ? 0 : widget.rank;
-    print("Event: ${widget.name}");
-    print("Status: $status");
-    setState(() {
-      _isInitialized = true;
-    });
-  }
+  // Check if the current user is a participant.
+  isParticipant = await _isParticipant();
+  print("IsParticipant: $isParticipant");
+  
+  // Set the main event status.
+  status = isParticipant ? 'accepted' : 'rejected';
+  
+  // For subevent status, use the first subevent if available, otherwise default to 'pending'.
+  subeventStatus = widget.subevents.isNotEmpty ? widget.subevents.first.status : 'pending';
+  
+  // Compute waiting list positions.
+  waitingListPosition = (status == 'accepted') ? 0 : widget.rank;
+  subeventWaitingListPosition = (subeventStatus == 'accepted') ? 0 : widget.rank;
+  
+  print("Event: ${widget.name}");
+  print("Status: $status");
+  
+  // Once initialization is complete, update the UI.
+  setState(() {
+    _isInitialized = true;
+  });
+}
 
   Future<bool> _isParticipant() async {
     print("Calling _isParticipant");
@@ -134,6 +164,10 @@ class _EventWidgetState extends State<EventWidget> {
     return status == 'accepted';
   }
 
+  bool _isParticipantSubevent(Subevent subevent) {
+    return subevent.status == 'accepted';
+  }
+
   void _updateStatus(String newStatus, {bool isSubevent = false}) async {
     var response = await ApiService.patch(
         '/events/${widget.eventId}/change-status', {
@@ -158,7 +192,43 @@ class _EventWidgetState extends State<EventWidget> {
     }
   }
 
-  void _joinEvent() async {
+  Future<void> _joinSubEvent(Subevent subevent) async {
+    var person = await AuthService.getPerson();
+    if (person == null) {
+      return;
+    }
+    var personId = person['id'];
+    var response = await ApiService.post('/events/join', {
+      'eventId': subevent.id,
+      'personId': personId,
+    });
+    if (response.statusCode == 200) {
+      setState(() {
+        subevent.status = "accepted";
+      });
+      //widget.onStatusChanged();
+    }
+  }
+
+  Future<void> _leaveSubEvent(Subevent subevent) async {
+    var person = await AuthService.getPerson();
+    if (person == null) {
+      return;
+    }
+    var personId = person['id'];
+    var response = await ApiService.post('/events/leave', {
+      'eventId': subevent.id,
+      'personId': personId,
+    });
+    if (response.statusCode == 200) {
+      setState(() {
+        subevent.status = "rejected";
+      });
+      //widget.onStatusChanged();
+    }
+  }
+
+  Future<void> _joinEvent() async {
     var person = await AuthService.getPerson();
     if (person == null) {
       return;
@@ -176,23 +246,29 @@ class _EventWidgetState extends State<EventWidget> {
     }
   }
 
-  void _leaveEvent() async {
-    var person = await AuthService.getPerson();
-    if (person == null) {
-      return;
+  Future<void> _leaveEvent() async {
+  var person = await AuthService.getPerson();
+  if (person == null) return;
+  var personId = person['id'];
+  var response = await ApiService.post('/events/leave', {
+    'eventId': widget.eventId,
+    'personId': personId,
+  });
+  if (response.statusCode == 200) {
+    // For each subevent that the user is currently joined in, leave it.
+    for (var subevent in widget.subevents) {
+      if (subevent.status == 'accepted') {
+       await _leaveSubEvent(subevent);
+      }
     }
-    var personId = person['id'];
-    var response = await ApiService.post('/events/leave', {
-      'eventId': widget.eventId,
-      'personId': personId,
+    setState(() {
+      status = "rejected";
     });
-    if (response.statusCode == 200) {
-      setState(() {
-        status = "rejected";
-      });
-      //widget.onStatusChanged();
-    }
+
   }
+}
+
+   
 
   Widget _buildStatusButton(
       String text, VoidCallback? onPressed, Color backgroundColor) {
@@ -229,6 +305,61 @@ class _EventWidgetState extends State<EventWidget> {
     DateTime parsedTime = DateTime.parse(time);
     return '${parsedTime.hour}:${parsedTime.minute.toString().padLeft(2, '0')}';
   }
+
+  Widget buildSubeventsPage() {
+    if (widget.subevents.isEmpty) return Container();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Divider(color: Colors.grey),
+        Text(
+          "Subevents",
+          style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+        ),
+        ...widget.subevents.map((subevent) {
+          return ListTile(
+            title: Text(subevent.name),
+            subtitle: Text("${_formatTime(subevent.startTime)} - ${_formatTime(subevent.endTime)}"),
+          );
+        }).toList(),
+      ],
+    );
+  }
+
+  Widget buildSubevents() {
+  if (widget.subevents.isEmpty) return Container();
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Divider(color: Colors.grey),
+      Text(
+        "Subevents",
+        style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+      ),
+      ...widget.subevents.map((subevent) {
+        // Determine the button text, color, and onPressed action.
+        String buttonText = subevent.status == 'accepted' ? 'Leave' : 'Join';
+        Color buttonColor = _isParticipantSimple()
+            ? (subevent.status == 'accepted' ? Colors.red : Colors.green)
+            : Colors.grey; // Disabled color if not joined to the main event.
+
+        // If the main event isn't joined, disable the button (i.e. onPressed is null).
+        VoidCallback? onPressed = _isParticipantSimple()
+            ? (subevent.status == 'accepted'
+                ? () => _leaveSubEvent(subevent)
+                : () => _joinSubEvent(subevent))
+            : null;
+
+        return ListTile(
+          title: Text(subevent.name),
+          subtitle: Text(
+              "${_formatTime(subevent.startTime)} - ${_formatTime(subevent.endTime)}"),
+          trailing: _buildStatusButton(buttonText, onPressed, buttonColor),
+        );
+      }).toList(),
+    ],
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -280,31 +411,7 @@ class _EventWidgetState extends State<EventWidget> {
               SizedBox(height: 10.0),
               Text(widget.description),
               SizedBox(height: 10.0),
-              if (widget.subevent_name != '') ...[
-                SizedBox(height: 5.0),
-                Divider(
-                  color: Colors.grey,
-                  thickness: 1,
-                ),
-                SizedBox(height: 5.0),
-                Center(
-                  child: Text(
-                    widget.subevent_name,
-                    style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Text('${widget.subevent_startTime} - ${widget.subevent_endTime}',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                SizedBox(height: 10.0),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(widget.location, style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('Limit: ${widget.limit.toString()}',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ],
+              buildSubeventsPage(),
             ],
           ),
         ),
@@ -326,13 +433,7 @@ class _EventWidgetState extends State<EventWidget> {
                 limit: widget.limit,
                 image: widget.image,
                 status: widget.status,
-                subevent_name: widget.subevent_name,
-                subevent_description: widget.subevent_description,
-                subevent_startTime: widget.subevent_startTime,
-                subevent_endTime: widget.subevent_endTime,
-                subevent_location: widget.subevent_location,
-                subevent_limit: widget.subevent_limit,
-                subevent_status: widget.subevent_status,
+                subevents: widget.subevents,
                 rank: widget.rank,
                 onlyView: widget.onlyView,
                 asPage: true,
@@ -387,6 +488,7 @@ class _EventWidgetState extends State<EventWidget> {
                     ],
                     
                   ),
+                  buildSubevents(),
                 
               ],
             ),

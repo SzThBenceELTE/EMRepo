@@ -28,6 +28,7 @@ export class EventsComponent {
   userStatuses = Object.values(StatusTypeEnum);
   EventTypeEnum = Object.values(EventTypeEnum);
   events: any[] = [];
+  allEvents: any[] = [];
   filteredEvents: any[] = [];
   subEventCollapse = false;
   newEventSubmit = true;
@@ -148,6 +149,10 @@ export class EventsComponent {
   }
   //fetch all events, refresh the page
   fetchEvents() {
+    this.apiService.get('events/all').subscribe((data) => {
+      this.allEvents = data;
+      console.log(this.allEvents);
+    });
     this.apiService.get('events').subscribe((data) => {
       this.events = data.reverse();
       console.log(this.events);
@@ -156,8 +161,8 @@ export class EventsComponent {
   }
   //current one
   setSelectedEvent(event_id: number) {
-    this.selectedEvent = this.events.find(event => event.id === event_id);
-    this.currentEvent = this.events.find(event => event.id === event_id);
+    this.selectedEvent = this.allEvents.find(event => event.id === event_id);
+    this.currentEvent = this.allEvents.find(event => event.id === event_id);
     console.log(this.selectedEvent);
   }
   //applies changes after editing
@@ -206,6 +211,11 @@ export class EventsComponent {
     this.imagePreviewSrc = null;
     this.newEventSubmit = true;
   }
+
+  fetchSubEvents(event_id: number) {
+    return this.selectedEvent.subevents;
+  }
+
   //big data dump for event creation
   submitEvent() {
     // this.errors = [];
